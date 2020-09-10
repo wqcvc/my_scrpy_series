@@ -308,14 +308,4 @@ if __name__ == '__main__':
     f = My91DownLoad()
     f.start(number=1)
 
-'''
-2020-09-08 23:15:51,475 - INFO - video url is : [[]]
-Traceback (most recent call last):
-  File "scrpy.py", line 260, in <module>
-    f.start()
-  File "scrpy.py", line 46, in start
-    list_videos,list_titles=self.fetch_video_urls(list_urls)
-  File "scrpy.py", line 131, in fetch_video_urls
-    video_url=url_re[0]
-IndexError: list index out of range
-'''
+
