@@ -5,7 +5,6 @@ topic:for test fetch videos and store in my folders
 usage: to be continue
 """
 
-'''
 import datetime
 import requests
 import os
@@ -242,7 +241,7 @@ class My91DownLoad():
             logger.info(f"共[{len(video_lists)}]个视频,开始下载第[{i}]个======>")
             res3 = requests.request('GET', url=video_lists[i], headers=headers)
             total_length = int(res3.headers.get("Content-Length"))
-            logger.info(f"该文件大小:[{total_length//(1000*1000)}]M.")
+            logger.info(f"该文件大小:[{total_length//(1024*1024)}]M.")
             if res3.status_code != 200:
                 logger.info(f"video download failed:[{video_lists[i]}] status_code:[{res3.status_code}]")
                 break
