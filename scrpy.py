@@ -64,7 +64,6 @@ class My91DownLoad():
         for page in range(pages):
             current_url = config['urls']['index_page'].replace("page=1", f"page={page + 1}")
             # current_url = self._favo_video_url.replace("page=1", f"page={page + 1}")
-            logger.info(f"current_url url : {current_url}")
             logger.info(f"start request index url : {current_url}")
             headers = {
                 'User-Agent': ua.random,
@@ -79,8 +78,8 @@ class My91DownLoad():
                 'https://0722.91p51.com/view_video.php\\?viewkey=.*&page=.*&viewtype=.*&category=.{2}',
                 'temp'
             ]
-            # url_list_page = re.findall(subpage_re_rules[0],res1.text)
-            url_list_page = re.findall(config['rules']['sub_page_rule'],res1.text)
+            url_list_page = re.findall(subpage_re_rules[0],res1.text)
+            # url_list_page = re.findall(config['rules']['sub_page_rule'],res1.text)
             url_list_set = list(set(url_list_page))
             for i in range(len(url_list_set)):
                 url_list.append(url_list_set[i])
@@ -148,8 +147,8 @@ class My91DownLoad():
                 'http.?://.*.91p\d{2}.com/.?mp43/.*.mp4\\?.*=.*&f=[^"]*',
                 'http.?://.*.91p48.com//mp43/.*.mp4\\?secure=.*&f=[^"]*'
             ]
-            # url_re = re.findall(viode_re_rules[0], str(res2.text))
-            url_re = re.findall(config['rules']['video_rule'], str(res2.text))
+            url_re = re.findall(viode_re_rules[0], str(res2.text))
+            # url_re = re.findall(config['rules']['video_rule'], str(res2.text))
             url_re = list(set(url_re))
 
             if url_re:
