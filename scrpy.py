@@ -18,24 +18,25 @@ from fake_useragent import UserAgent
 from configparser import ConfigParser
 import threading
 
-
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-config=ConfigParser()
+config = ConfigParser()
 config.read("urls_rules.ini")
 
 logger.info(f"[{config['urls']['index_page']}]")
 logger.info(f"[{config['rules']['sub_page_rule']}]")
 logger.info(f"[{config['rules']['video_rule']}]")
 
+
 class My91DownLoad():
     _favo_video_url = "https://0722.91p51.com/video.php?category=rf&page=1"
     _current_day = datetime.datetime.now().strftime("%Y-%m-%d")
     _current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
     def __init__(self):
-        self.log_dir='logs/'+self._current_day
-        self.storage_dir='video/'+self._current_day
+        self.log_dir = 'logs/' + self._current_day
+        self.storage_dir = 'video/' + self._current_day
         if not os.path.exists(self.log_dir):
             os.makedirs(self.log_dir)
         if not os.path.exists(self.storage_dir):
@@ -49,14 +50,14 @@ class My91DownLoad():
         """
         list_urls = self.fetch_subpage_urls(number)
 
-        list_videos, list_titles,list_images = self.fetch_video_urls(list_urls)
+        list_videos, list_titles, list_images = self.fetch_video_urls(list_urls)
 
-        #可以考虑使用多线程下载
+        # 可以考虑使用多线程下载
         # threads=5
         # for i in range(threads):
         #     t = threading.Thread(target=self.download_videos, args=(list_videos,list_titles))
         #     t.start()
-        self.download_videos(title_lists=list_titles,video_lists=list_videos)
+        self.download_videos(title_lists=list_titles, video_lists=list_videos)
 
     def fetch_subpage_urls(self, number: int = 0):
         """
@@ -66,7 +67,7 @@ class My91DownLoad():
         """
         pages = number // 24 + 1
         url_list = []
-        ua=UserAgent()
+        ua = UserAgent()
         for page in range(pages):
             current_url = config['urls']['index_page'].replace("page=1", f"page={page + 1}")
             # current_url = self._favo_video_url.replace("page=1", f"page={page + 1}")
@@ -80,18 +81,18 @@ class My91DownLoad():
             logger.debug(f"res1.text include: {res1.text}")
 
             logger.info(f"start parse: get subpage urls:")
-            subpage_re_rules=[
+            subpage_re_rules = [
                 'https://0722.91p51.com/view_video.php\\?viewkey=.*&page=.*&viewtype=.*&category=.{2}',
                 'temp'
             ]
-            url_list_page = re.findall(subpage_re_rules[0],res1.text)
+            url_list_page = re.findall(subpage_re_rules[0], res1.text)
             # url_list_page = re.findall(config['rules']['sub_page_rule'],res1.text)
             url_list_set = list(set(url_list_page))
             for i in range(len(url_list_set)):
                 url_list.append(url_list_set[i])
 
-        if 0 < number <24:
-            url_list=url_list[0:number]
+        if 0 < number < 24:
+            url_list = url_list[0:number]
             logger.debug(f"url_list[0:1] is: {url_list[0:1]}")
             logger.info(f"url_list 数量: {len(url_list)}")
             logger.debug(f"url_list is: {url_list}")
@@ -102,7 +103,6 @@ class My91DownLoad():
         # wrapper > div.container.container-minheight > div.row > div > div > div:nth-child(3) > div > a
         # // *[ @ id = "wrapper"] / div[1] / div[2] / div / div / div[1] / div / a
         # / html / body / div[4] / div[1] / div[2] / div / div / div[1] / div / a
-
 
     def fetch_video_urls(self, listA: list, retry_times: int = 0):
         """
@@ -132,7 +132,7 @@ class My91DownLoad():
             res2 = requests.request('GET', listA[i], headers=headers)
             if res2.status_code != 200:
                 logger.info(f"subpage url:[{listA[i]}] retrun an Error: status_code:[{res2.status_code}]")
-                with open(self._current_day+'_request_subpage_failed.log','w',encoding='utf-8') as f:
+                with open(self._current_day + '_request_subpage_failed.log', 'w', encoding='utf-8') as f:
                     f.write(f"\n请求失败的subpage_url:[{listA[i]}]\n\n")
             else:
                 logger.info(f"subpage url:[{listA[i]}],status_code: [{res2.status_code}]")
@@ -173,8 +173,9 @@ class My91DownLoad():
                 image_lists.append(img_url)
                 title_lists.append(tittle_f)
             else:
-                logger.info(f"parse video url failed.please see error_log:{self._current_day + '_parse_video_url_error.log'}")
-                with open(self.log_dir+ "/" + self._current_day + '_error.log', "a", encoding='utf-8') as f:
+                logger.info(
+                    f"parse video url failed.please see error_log:{self._current_day + '_parse_video_url_error.log'}")
+                with open(self.log_dir + "/" + self._current_day + '_error.log', "a", encoding='utf-8') as f:
                     f.write(f"\n请求时间:[{self._current_time}]\n")
                     f.write(f"正则匹配失败subpage_url:[{listA[i]}]\n")
                     f.write(res2.text)
@@ -182,8 +183,8 @@ class My91DownLoad():
                 # '''如果正常匹配条件没匹配到对应的视频url,则尝试匹配strencode函数解析对应视频url'''
                 # strencode = re.findall(r'document.write\(strencode\("(.*)"', str(res2.text))
                 # if not strencode:
-                #     logger.info(f"第{i}个url:strencode() still parse failed,break.")
-                #     break
+                #     logger.info(f"第{i}个url:strencode() still parse failed,continue.")
+                #     continue
                 # else:
                 #     # fecth video
                 #     logger.info(f"第{i}个url:strencode() parse success.")
@@ -195,10 +196,10 @@ class My91DownLoad():
             time.sleep(3)
 
         logger.info(f"共请求{len(listA)}个,成功请求[{len(video_lists)}]个...")
-        with open(self.log_dir+'/'+self._current_day+'_video_lists.log',"w") as f:
-            f.write(self._current_time+':\n')
+        with open(self.log_dir + '/' + self._current_day + '_video_lists.log', "w") as f:
+            f.write(self._current_time + ':\n')
             for v in range(len(video_lists)):
-                f.write(title_lists[v]+"\n"+video_lists[v]+"\n")
+                f.write(title_lists[v] + "\n" + video_lists[v] + "\n")
 
         # if retry_times == 0:
         #     pass
@@ -218,7 +219,7 @@ class My91DownLoad():
         assert video_lists, "video_lists为空"
         assert title_lists, "title_lists为空"
         # 检查文件夹
-        current_day_dir=self.storage_dir
+        current_day_dir = self.storage_dir
         if not os.path.exists(current_day_dir):
             os.mkdir(current_day_dir)
         else:
@@ -226,7 +227,7 @@ class My91DownLoad():
 
         for i in range(len(video_lists)):
             video_name = title_lists[i] + '.mp4'
-            ua=UserAgent()
+            ua = UserAgent()
             headers = {
                 'User-Agent': ua.random,
                 # 'Host': 'cfdc.91p52.com',
@@ -241,34 +242,35 @@ class My91DownLoad():
                 # 'Sec-Fetch-Site': 'none',
                 # 'Sec-Fetch-User': '?1',
                 # 'Upgrade - Insecure - Requests': '1',
-                'Referer':self._favo_video_url,
+                'Referer': self._favo_video_url,
                 # 'cookie':'',
-            } # Referer？ video url不正确  #看一下对应的链接 请求头
-            logger.info(f"共[{len(video_lists)}]个视频,开始下载第[{i}]个======>")
+            }  # Referer？ video url不正确  #看一下对应的链接 请求头
+            logger.info(f"共[{len(video_lists)}]个视频,开始下载第[{i+1}]个======>")
             res3 = requests.request('GET', url=video_lists[i], headers=headers)
             total_length = int(res3.headers.get("Content-Length"))
-            logger.info(f"该文件大小:[{total_length//(1024*1024)}]M.")
+            logger.info(f"该文件大小:[{total_length // (1024 * 1024)}]M.")
             if res3.status_code != 200:
                 logger.info(f"video download failed:[{video_lists[i]}] status_code:[{res3.status_code}]")
-                break
+                continue
             else:
                 pass
 
-            if os.path.exists(video_name):
-                logger.info(f"video file: [{video_name}] already exist.")
-                break
+            if os.path.exists(current_day_dir+'/'+video_name):
+                logger.info(f"video file: [{video_name}] already exist in [{current_day_dir}].will continue~")
+                continue
             else:
                 logger.info(f"start download:[].")
                 with open(current_day_dir + '/' + video_name, "wb") as f:
-                    widgets = ['Progress: ', Percentage(), ' ', Bar('#'), ' ', Timer(), ' ', ETA(), ' ',FileTransferSpeed()]
-                    down_progress = ProgressBar(widgets=widgets,maxval=total_length)
+                    widgets = ['Progress: ', Percentage(), ' ', Bar('#'), ' ', Timer(), ' ', ETA(), ' ',
+                               FileTransferSpeed()]
+                    down_progress = ProgressBar(widgets=widgets, maxval=total_length)
                     down_progress.start()
-                    dl=0
+                    dl = 0
                     for chunk in res3.iter_content(chunk_size=128):
                         if chunk:
                             f.write(chunk)
                             f.flush()
-                            dl+=chunk
+                            dl += len(chunk)
                         down_progress.update(dl)
                     down_progress.finish()
                 logger.info(f"download success:[].")
@@ -319,6 +321,5 @@ class My91DownLoad():
 
 if __name__ == '__main__':
     f = My91DownLoad()
-    f.start(number=1)
-
-
+    #最大number=25 [作为游客，你每天只可观看25个视频]
+    f.start(number=25)
