@@ -29,10 +29,16 @@ logger.info(f"[{config['rules']['sub_page_rule']}]")
 logger.info(f"[{config['rules']['video_rule']}]")
 
 class My91DownLoad():
-    _favo_video_url = "https://0722.91p51.com/video.php?category=rf&page=1"  # https://0722.91p51.com/video.php?category=rf  分页
-    _favo_video_url2 = "https://0722.91p51.com/index.php"  # https://0722.91p51.com/index.php 主页
+    _favo_video_url = "https://0722.91p51.com/video.php?category=rf&page=1"
     _current_day = datetime.datetime.now().strftime("%Y-%m-%d")
     _current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    def __init__(self):
+        self.log_dir='logs/'+self._current_day
+        self.storage_dir='video/'+self._current_day
+        if not os.path.exists(self.log_dir):
+            os.makedirs(self.log_dir)
+        if not os.path.exists(self.storage_dir):
+            os.makedirs(self.storage_dir)
 
     def start(self, number: int = 0):
         """
@@ -44,7 +50,7 @@ class My91DownLoad():
 
         list_videos, list_titles,list_images = self.fetch_video_urls(list_urls)
 
-        self.download_videos(title_lists=list_titles,video_lists=list_videos)
+        #self.download_videos(title_lists=list_titles,video_lists=list_videos)
 
     def fetch_subpage_urls(self, number: int = 0):
         """
@@ -56,28 +62,26 @@ class My91DownLoad():
         url_list = []
         ua=UserAgent()
         for page in range(pages):
-            current_url = self._favo_video_url.replace("page=1", f"page={page + 1}")
+            current_url = config['urls']['index_page'].replace("page=1", f"page={page + 1}")
+            # current_url = self._favo_video_url.replace("page=1", f"page={page + 1}")
             logger.info(f"current_url url : {current_url}")
             logger.info(f"start request index url : {current_url}")
             headers = {
                 'User-Agent': ua.random,
-                #'X-Forwarded-For': self.__random_ip()
                 'Referer': current_url,
-                #'cookie':'__cfduid=d4caf5fceb80b2ec8480f9bb5b3a5c7d41599484630; CLIPSHARE=r8fror5c7tdu7uoit2sagduuv2; __utmc=162791677; __utmz=162791677.1599484864.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __dtsu=10401599484639F90B58665C5A158ECD; __utma=162791677.328926869.1599484864.1599667047.1599745651.6; __utmb=162791677.0.10.1599745651'
             }
             res1 = requests.request('GET', current_url, headers=headers)
             logger.debug(f"res1.status_code : {res1.status_code}")
             logger.debug(f"res1.text include: {res1.text}")
 
             logger.info(f"start parse: get subpage urls:")
-            # url_list=set()
             subpage_re_rules=[
                 'https://0722.91p51.com/view_video.php\\?viewkey=.*&page=.*&viewtype=.*&category=.{2}',
                 'temp'
             ]
-            url_list_page = re.findall(subpage_re_rules[0],res1.text)
+            # url_list_page = re.findall(subpage_re_rules[0],res1.text)
+            url_list_page = re.findall(config['rules']['sub_page_rule'],res1.text)
             url_list_set = list(set(url_list_page))
-            # url_list=url_list_set
             for i in range(len(url_list_set)):
                 url_list.append(url_list_set[i])
 
@@ -88,15 +92,12 @@ class My91DownLoad():
             logger.debug(f"url_list is: {url_list}")
 
         return url_list
-
         # wrapper > div.container.container-minheight > div.row > div > div > div:nth-child(1) > div > a
         # wrapper > div.container.container-minheight > div.row > div > div > div:nth-child(2) > div > a
         # wrapper > div.container.container-minheight > div.row > div > div > div:nth-child(3) > div > a
         # // *[ @ id = "wrapper"] / div[1] / div[2] / div / div / div[1] / div / a
         # / html / body / div[4] / div[1] / div[2] / div / div / div[1] / div / a
 
-        # number数大于每页最大个数 : 模拟分页按钮请求 实现翻页
-        # self._fetch_specific_list(res1.text) #保存当前索引页到详情页链接，挨个去请求然后获取具体详情页viode链接
 
     def fetch_video_urls(self, listA: list, retry_times: int = 0):
         """
@@ -117,7 +118,6 @@ class My91DownLoad():
             headers = {
                 'Accept-Language': 'zh-CN,zh;q=0.9',
                 'User-Agent': ua.random,
-                #'X-Forwarded-For': self.__random_ip(),
                 'referer': listA[i],
                 'Content-Type': 'multipart/form-data; session_language=cn_CN',
                 'Connection': 'keep-alive',
@@ -133,7 +133,7 @@ class My91DownLoad():
                 logger.info(f"subpage url:[{listA[i]}],status_code: [{res2.status_code}]")
                 pass
 
-            # with open(self._current_day+'_debug.log','a',encoding='utf-8') as f:
+            # with open(self.log_dir+'/'+self._current_day+'_debug.log','a',encoding='utf-8') as f:
             #     f.write("\n\n\n\n\n\n\n\n\n\n\n"+res2.text)
             #     f.write("=====================================================================================\n\n\n\n\n\n")
 
@@ -148,7 +148,8 @@ class My91DownLoad():
                 'http.?://.*.91p\d{2}.com/.?mp43/.*.mp4\\?.*=.*&f=[^"]*',
                 'http.?://.*.91p48.com//mp43/.*.mp4\\?secure=.*&f=[^"]*'
             ]
-            url_re = re.findall(viode_re_rules[0], str(res2.text))
+            # url_re = re.findall(viode_re_rules[0], str(res2.text))
+            url_re = re.findall(config['rules']['video_rule'], str(res2.text))
             url_re = list(set(url_re))
 
             if url_re:
@@ -168,7 +169,7 @@ class My91DownLoad():
                 title_lists.append(tittle_f)
             else:
                 logger.info(f"parse video url failed.please see error_log:{self._current_day + '_parse_video_url_error.log'}")
-                with open(self._current_day + '_error.log', "a", encoding='utf-8') as f:
+                with open(self.log_dir+ "/" + self._current_day + '_error.log', "a", encoding='utf-8') as f:
                     f.write(f"\n请求时间:[{self._current_time}]\n")
                     f.write(f"正则匹配失败subpage_url:[{listA[i]}]\n")
                     f.write(res2.text)
@@ -189,7 +190,7 @@ class My91DownLoad():
             time.sleep(3)
 
         logger.info(f"共请求{len(listA)}个,成功请求[{len(video_lists)}]个...")
-        with open(self._current_day+'_video_lists.log',"w") as f:
+        with open(self.log_dir+'/'+self._current_day+'_video_lists.log',"w") as f:
             f.write(self._current_time+':\n')
             for v in range(len(video_lists)):
                 f.write(title_lists[v]+"\n"+video_lists[v]+"\n")
@@ -211,10 +212,10 @@ class My91DownLoad():
         """
         assert video_lists, "video_lists为空"
         assert title_lists, "title_lists为空"
-        # 创建文件夹
-        storage_dir = self._current_day
-        if not os.path.exists(storage_dir):
-            os.mkdir(storage_dir)
+        # 检查文件夹
+        current_day_dir=self.storage_dir
+        if not os.path.exists(current_day_dir):
+            os.mkdir(current_day_dir)
         else:
             pass
 
@@ -253,7 +254,7 @@ class My91DownLoad():
                 break
             else:
                 logger.info(f"start download:[].")
-                with open(storage_dir + '/' + video_name, "wb") as f:
+                with open(current_day_dir + '/' + video_name, "wb") as f:
                     #wdg = ['Progress: ', progressbar.Percentage(), ' ',progressbar.Bar(marker='#', left='[', right=']'),' ', progressbar.ETA(), ' ', progressbar.FileTransferSpeed()]
                     # down_progress = ProgressBar(widgets=wdg, maxval=total_length).start()
                     down_progress = ProgressBar(maxval=total_length).start()
