@@ -254,15 +254,16 @@ class My91DownLoad():
             else:
                 logger.info(f"start download:[].")
                 with open(current_day_dir + '/' + video_name, "wb") as f:
-                    #wdg = ['Progress: ', progressbar.Percentage(), ' ',progressbar.Bar(marker='#', left='[', right=']'),' ', progressbar.ETA(), ' ', progressbar.FileTransferSpeed()]
-                    # down_progress = ProgressBar(widgets=wdg, maxval=total_length).start()
-                    down_progress = ProgressBar(maxval=total_length).start()
-                    # down_progress.start()
-                    for chunk in res3.iter_content(chunk_size=1):
+                    widgets = ['Progress: ', Percentage(), ' ', Bar('#'), ' ', Timer(), ' ', ETA(), ' ',FileTransferSpeed()]
+                    down_progress = ProgressBar(widgets=widgets,maxval=total_length)
+                    down_progress.start()
+                    dl=0
+                    for chunk in res3.iter_content(chunk_size=128):
                         if chunk:
                             f.write(chunk)
                             f.flush()
-                        down_progress.update(len(chunk) + 1)
+                            dl+=chunk
+                        down_progress.update(dl)
                     down_progress.finish()
                 logger.info(f"download success:[].")
 
