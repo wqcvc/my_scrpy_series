@@ -16,6 +16,7 @@ import time
 import base64
 from fake_useragent import UserAgent
 from configparser import ConfigParser
+import threading
 
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -50,7 +51,12 @@ class My91DownLoad():
 
         list_videos, list_titles,list_images = self.fetch_video_urls(list_urls)
 
-        #self.download_videos(title_lists=list_titles,video_lists=list_videos)
+        #可以考虑使用多线程下载
+        # threads=5
+        # for i in range(threads):
+        #     t = threading.Thread(target=self.download_videos, args=(list_videos,list_titles))
+        #     t.start()
+        self.download_videos(title_lists=list_titles,video_lists=list_videos)
 
     def fetch_subpage_urls(self, number: int = 0):
         """
@@ -266,6 +272,13 @@ class My91DownLoad():
                         down_progress.update(dl)
                     down_progress.finish()
                 logger.info(f"download success:[].")
+
+    def proxy_set(self):
+        """
+        设置代理访问,to do
+        :return:
+        """
+        pass
 
     def __strdecode(self, input, key):
         """
