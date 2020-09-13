@@ -1,8 +1,8 @@
 """
 Date:2020-8-24
 Author:terry.wang
-topic:for test fetch videos and store in my folders
-usage: to be continue
+topic:for test fetch videos and store in my folders 91pprn
+usage: url获取有两种方式 1.video url直接re  2. strencode加密解密获取
 """
 
 import datetime
@@ -66,6 +66,7 @@ class My91DownLoad():
         :return:
         """
         pages = number // 24 + 1
+
         url_list = []
         ua = UserAgent()
         for page in range(pages):
@@ -91,11 +92,10 @@ class My91DownLoad():
             for i in range(len(url_list_set)):
                 url_list.append(url_list_set[i])
 
-        if 0 < number < 24:
+        if 0 < number:
             url_list = url_list[0:number]
             logger.debug(f"url_list[0:1] is: {url_list[0:1]}")
-            logger.info(f"url_list 数量: {len(url_list)}")
-            logger.debug(f"url_list is: {url_list}")
+            logger.info(f"请求number:[{number}]个. 实际存储数量: {len(url_list)}")
 
         return url_list
         # wrapper > div.container.container-minheight > div.row > div > div > div:nth-child(1) > div > a
@@ -116,7 +116,7 @@ class My91DownLoad():
         image_lists = []
         for i in range(len(listA)):
             logger.info(f"\n")
-            logger.info(f"开始请求第[{i}]个subpage===>")
+            logger.info(f"开始请求第[{i+1}]个subpage===>")
             ua = UserAgent()
             #  获取等video url 404: 需要解决这里的 cookies等加上获取等内容 == request获取内容
             # referer need user subpage url
@@ -159,8 +159,31 @@ class My91DownLoad():
 
             if url_re:
                 video_url = url_re[0]
-                logger.info(f"video url:[{video_url}]")
+                logger.info(f"第{i+1}个re video url:[{video_url}]")
                 video_lists.append(video_url)
+
+            else:
+                logger.info(f"re video url failed.try use strencode method.")
+                '''如果正常匹配条件没匹配到对应的视频url,则尝试匹配strencode函数解析对应视频url'''
+                strencode = re.findall(r'document.write\(strencode\("(.*)"', str(res2.text))
+                if not strencode:
+                    logger.info(f"第{i+1}个url:re and strencode() both failed.more details see error log:{self._current_day + '_parse_video_url_error.log'}")
+                    with open(self.log_dir + "/" + self._current_day + '_error.log', "a", encoding='utf-8') as f:
+                        f.write(f"\n请求时间:[{self._current_time}]\n")
+                        f.write(f"正则匹配和strencode都失败subpage_url:[{listA[i]}]\n")
+                        f.write(res2.text)
+                        f.write("===============================================================================\n")
+                    continue
+                else:
+                    # re match failed,but get strencode()
+                    logger.info(f"第{i+1}个url:strencode() rematch success.")
+                    temp = strencode[0].split(',')
+                    input = temp[0].replace('"', '')
+                    encode_key = temp[1].replace('"', '')
+                    video_url_strencode = self.__strdecode(input=input, key=encode_key)
+                    logger.info(f"第{i+1}个strencode video_url is:[{video_url_strencode}]")
+                    video_lists.append(video_url_strencode)
+
                 # fetch title
                 tittle = re.findall(r'<h4 class="login_register_header" align=left>(.*?)</h4>', res2.text, re.S)
                 temp_t = tittle[0].replace('\n', '')
@@ -169,30 +192,9 @@ class My91DownLoad():
                 # fetch img
                 img_url = re.findall(r'poster="(.*?)"', str(res2.text))
                 logger.debug(f"img_url is:{img_url}")
-
                 image_lists.append(img_url)
                 title_lists.append(tittle_f)
-            else:
-                logger.info(
-                    f"parse video url failed.please see error_log:{self._current_day + '_parse_video_url_error.log'}")
-                with open(self.log_dir + "/" + self._current_day + '_error.log', "a", encoding='utf-8') as f:
-                    f.write(f"\n请求时间:[{self._current_time}]\n")
-                    f.write(f"正则匹配失败subpage_url:[{listA[i]}]\n")
-                    f.write(res2.text)
-                    f.write("===============================================================================\n")
-                # '''如果正常匹配条件没匹配到对应的视频url,则尝试匹配strencode函数解析对应视频url'''
-                # strencode = re.findall(r'document.write\(strencode\("(.*)"', str(res2.text))
-                # if not strencode:
-                #     logger.info(f"第{i}个url:strencode() still parse failed,continue.")
-                #     continue
-                # else:
-                #     # fecth video
-                #     logger.info(f"第{i}个url:strencode() parse success.")
-                #     temp = strencode[0].split(',')
-                #     input = temp[0].replace('"', '')
-                #     encode_key = temp[1].replace('"', '')
-                #     video_url = self.__strdecode(input=input, key=encode_key)
-                #     logger.info(f"第{i}个url解析出的video_url is:[{video_url}]")
+
             time.sleep(3)
 
         logger.info(f"共请求{len(listA)}个,成功请求[{len(video_lists)}]个...")
@@ -216,8 +218,8 @@ class My91DownLoad():
         :param title_lists:存储了对应的标题名字的列表
         :return:
         """
-        assert video_lists, "video_lists为空"
-        assert title_lists, "title_lists为空"
+        assert video_lists, "video_lists为空,无需下载"
+        assert title_lists, "title_lists为空，请检查"
         # 检查文件夹
         current_day_dir = self.storage_dir
         if not os.path.exists(current_day_dir):
@@ -246,6 +248,7 @@ class My91DownLoad():
                 # 'cookie':'',
             }  # Referer？ video url不正确  #看一下对应的链接 请求头
             logger.info(f"共[{len(video_lists)}]个视频,开始下载第[{i+1}]个======>")
+            logger.info(f"第[{i+1}]个[{title_lists[i]}]:[{video_lists[i]}]\n")
             res3 = requests.request('GET', url=video_lists[i], headers=headers)
             total_length = int(res3.headers.get("Content-Length"))
             logger.info(f"该文件大小:[{total_length // (1024 * 1024)}]M.")
@@ -256,10 +259,10 @@ class My91DownLoad():
                 pass
 
             if os.path.exists(current_day_dir+'/'+video_name):
-                logger.info(f"video file: [{video_name}] already exist in [{current_day_dir}].will continue~")
+                logger.info(f"video file: [{video_name}] already exist in [{current_day_dir}].will continue~\n")
                 continue
             else:
-                logger.info(f"start download:[].")
+                logger.info(f"start download.")
                 with open(current_day_dir + '/' + video_name, "wb") as f:
                     widgets = ['Progress: ', Percentage(), ' ', Bar('#'), ' ', Timer(), ' ', ETA(), ' ',
                                FileTransferSpeed()]
@@ -273,7 +276,9 @@ class My91DownLoad():
                             dl += len(chunk)
                         down_progress.update(dl)
                     down_progress.finish()
-                logger.info(f"download success:[].")
+                logger.info(f"download success.\n")
+            time.sleep(5)
+        logger.info(f"all url in video_lists downloand success!!!wonderful!!!")
 
     def proxy_set(self):
         """
@@ -322,4 +327,4 @@ class My91DownLoad():
 if __name__ == '__main__':
     f = My91DownLoad()
     #最大number=25 [作为游客，你每天只可观看25个视频]
-    f.start(number=25)
+    f.start(number=24)
