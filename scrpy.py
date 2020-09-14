@@ -57,6 +57,8 @@ class My91DownLoad():
         # for i in range(threads):
         #     t = threading.Thread(target=self.download_videos, args=(list_videos,list_titles))
         #     t.start()
+        # for in range(threads):
+        #     t.join()
         self.download_videos(title_lists=list_titles, video_lists=list_videos)
 
     def fetch_subpage_urls(self, number: int = 0):
