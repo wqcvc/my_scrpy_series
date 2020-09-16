@@ -7,6 +7,10 @@
  @Date: 2020-9-15
  @Author: terry.wang
 """
+# from .lib_scrpy import libScrpy
+#
+import  2_fund
+
 
 class libFund():
     pass
