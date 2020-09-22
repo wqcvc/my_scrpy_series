@@ -8,8 +8,24 @@
  @Author: terry.wang
 """
 import requests
-import time
 import os
+import execjs
+import datetime
+import re
+import logging
+
+logging.basicConfig(level=logging.INFO,format='%(asctime)s - %(levelname)s - %(message)s')
+logger=logging.getLogger()
+
 
 class libScrpy():
-    pass
+    _data_source_url='http://fund.eastmoney.com/xxx.html'
+    # f"http://fund.eastmoney.com/{code}.html"
+    # http: // fundf10.eastmoney.com / jjjz_270002.html
+    _current_time=datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    def apply(self):
+        """
+        请求抓取数据
+        :return:
+        """
+

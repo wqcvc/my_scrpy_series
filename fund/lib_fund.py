@@ -7,16 +7,15 @@
  @Date: 2020-9-15
  @Author: terry.wang
 """
-# from .lib_scrpy import libScrpy
-#
-import  2_fund
+from my_scrpy_series.fund import *
+import re
+import requests
+import datetime
+import logging
 
 
 class libFund():
     pass
-
-# ppp=libScrpy()
-
 
 
 

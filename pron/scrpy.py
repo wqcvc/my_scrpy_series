@@ -17,6 +17,7 @@ import base64
 from fake_useragent import UserAgent
 from configparser import ConfigParser
 import threading
+import execjs
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -179,6 +180,7 @@ class My91DownLoad():
                 else:
                     # re match failed,but get strencode()
                     logger.info(f"第{i+1}个url:strencode() rematch success.")
+                    logger.info(f"strencode args:{strencode}")
                     temp = strencode[0].split(',')
                     input = temp[0].replace('"', '')
                     encode_key = temp[1].replace('"', '')
@@ -324,6 +326,16 @@ class My91DownLoad():
         random_ip = a + '.' + b + '.' + c + '.' + d
 
         return random_ip
+
+    def __js_exec(self,strencode:list):
+        """
+        调用js解密：pyexcejs库功能
+        :param strencode: 实际解密参数
+        :return:
+        """
+        print(f"run environ: {execjs.get().name}")
+        ctx = execjs.compile(open(r"strencode.js").read())
+        ctx.call("strencode",strencode[0],strencode[1])
 
 
 if __name__ == '__main__':
