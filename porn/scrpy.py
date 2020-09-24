@@ -6,6 +6,7 @@ usage: url获取有两种方式 1.video url直接re  2. strencode加密解密获
 """
 
 import datetime
+from time import time
 import requests
 import os
 import random
@@ -18,6 +19,8 @@ from fake_useragent import UserAgent
 from configparser import ConfigParser
 import threading
 import execjs
+import asyncio
+from pyppeteer import launch
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -51,7 +54,8 @@ class My91DownLoad():
         """
         list_urls = self.fetch_subpage_urls(number)
 
-        list_videos, list_titles, list_images = self.fetch_video_urls(list_urls)
+        # list_videos, list_titles, list_images = self.fetch_video_urls(list_urls)
+        list_videos, list_titles, list_images = self.fetch_video_urls_new(list_urls)
 
         # 可以考虑使用多线程下载
         # threads=5
@@ -60,7 +64,7 @@ class My91DownLoad():
         #     t.start()
         # for in range(threads):
         #     t.join()
-        self.download_videos(title_lists=list_titles, video_lists=list_videos)
+        # self.download_videos(title_lists=list_titles, video_lists=list_videos)
 
     def fetch_subpage_urls(self, number: int = 0):
         """
@@ -329,7 +333,7 @@ class My91DownLoad():
 
     def __js_exec(self,strencode:list):
         """
-        调用js解密：pyexcejs库功能
+        调用js解密：pyexcejs库功能 node.js/phantomjs...
         :param strencode: 实际解密参数
         :return:
         """
@@ -337,8 +341,117 @@ class My91DownLoad():
         ctx = execjs.compile(open(r"strencode.js").read())
         ctx.call("strencode",strencode[0],strencode[1])
 
+    async def __pyppeteeer_newget(self,subpage_url):
+        logger.info(f"开始请求subpage_url:[{subpage_url}]")
+        start = time.time()
+        ua=UserAgent()
+        timeout=360
+        launch_args = {
+            "headless": True,  # 关闭无头浏览器
+            "args": [
+                "--start-maximized",
+                "--no-sandbox",
+                "--disable-infobars",
+                "--ignore-certificate-errors",
+                "--log-level=3",
+                "--enable-extensions",
+                "--window-size=1920,1080",
+                f"\"--refer={self._favo_video_url}\"",
+                f"\"--user-agent={ua.random}\"",
+            ],
+        }
+        browser = await launch(**launch_args)
+        page = await browser.newPage()
+        # 'https://0722.91p51.com/view_video.php?viewkey=5f1ce5096ebc088204d5&page=1&viewtype=basic&category=rf',timeout=60000)
+        res = await page.goto(subpage_url, options={'timeout': timeout*1000})  # 跳转
+        # await page.screenshot({'path': 'example.png'})  # 截图
+        # res.text()
+        # page.title()
+        # page.content()
+        # page.cookies()
+        # print(await page.content())
+
+        # fecth video
+        viode_re_rules = [
+            'http.?://.*.91p\d{2}.com/.?mp43/.*.mp4\\?.*=.*f=[^"]*',
+            'http.?://.*.91p48.com//mp43/.*.mp4\\?secure=.*&f=[^"]*'
+        ]
+        url_re = re.findall(viode_re_rules[0], str(await page.content()))
+        url_re = list(set(url_re))
+        # fetch title
+        tittle = re.findall(r'<h4 class="login_register_header" align=left>(.*?)</h4>', str(await page.content()), re.S)
+        # fetch img
+        img_url = re.findall(r'poster="(.*?)"', str(await page.content()))
+
+        if not url_re or tittle or img_url:
+            logger.info(f"__pyppeteeer_newget return~")
+            return None,None,None
+        else:
+            video_f=url_re[0]
+            logger.info(f"video_url is:{video_f}")
+            temp_t = tittle[0].replace('\n', '')
+            tittle_f = temp_t.replace(' ', '')
+            logger.info(f"tiltle is:{tittle_f}")
+            img_f=img_url[0]
+            logger.debug(f"img_url is:{img_f}")
+
+        await browser.close()  # 关闭
+        end = time.time()
+        print(f"total run seconds: [{end-start}]")
+        return video_f,tittle_f,img_f
+
+
+    def fetch_video_urls_new(self,listB:list):
+        """
+        获取所有下载链接新接口:使用chrome的puppeteer py版本库:pyppeteer.
+        模拟无头浏览器环境 获取js动态渲染内容,曲线解密strencode+m.js
+        :param listB: 存储子详情页urls链接的列表
+        :return:返回存储了video title img的lists
+        """
+        logger.info(f"fetch_video_urls_new:start request subpages:get video urls.")
+        video_lists = []
+        title_lists = []
+        image_lists = []
+        for i in range(len(listB)):
+            logger.info(f"\n")
+            logger.info(f"开始请求第[{i+1}]个subpage===>")
+            ua = UserAgent() # ua.random
+            #  获取等video url 404: 需要解决这里的 cookies等加上获取等内容 == request获取内容
+            # referer need user subpage url
+            # headers = {
+            #     'Accept-Language': 'zh-CN,zh;q=0.9',
+            #     'User-Agent': ua.random,
+            #     'referer': listA[i],
+            #     'Content-Type': 'multipart/form-data; session_language=cn_CN',
+            #     'Connection': 'keep-alive',
+            #     'Upgrade-Insecure-Requests': '1',
+            # }
+            video_tmp,title_tmp,img_tmp=asyncio.get_event_loop().run_until_complete(self.__pyppeteeer_newget(subpage_url=listB[i]))
+            if not video_tmp or title_lists or image_lists:
+                logger.info(f"本次subpage解析(video,title,img)有数据不存在,退出第[{i+1}]次循环")
+                continue
+            else:
+                video_lists.append(video_tmp)
+                title_lists.append(title_lists)
+                image_lists.append(img_tmp)
+
+        logger.info(f"共请求{len(listB)}个,成功请求[{len(video_lists)}]个...")
+        with open(self.log_dir + '/' + self._current_day + '_video_lists.log', "w") as f:
+            f.write(self._current_time + ':\n')
+            for v in range(len(video_lists)):
+                f.write(title_lists[v] + "\n" + video_lists[v] + "\n")
+
+        # if retry_times == 0:
+        #     pass
+        # else:
+        #     for r in range(retry_times):
+        #         logger.info(f"开始第[{r + 1}]次重试")
+
+        return video_lists, title_lists, image_lists
+
+
 
 if __name__ == '__main__':
     f = My91DownLoad()
     #最大number=25 [作为游客，你每天只可观看25个视频]
-    f.start(number=24)
+    f.start(number=2)

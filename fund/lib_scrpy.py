@@ -23,9 +23,23 @@ class libScrpy():
     # f"http://fund.eastmoney.com/{code}.html"
     # http: // fundf10.eastmoney.com / jjjz_270002.html
     _current_time=datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    def apply(self):
+
+
+    def __init__(self):
+        pass
+
+    def apply(self,url):
         """
-        请求抓取数据
+        爬
+        :param url:抓qu地址
         :return:
         """
+
+    def re_match_rule(self):
+        """
+
+        :return:
+        """
+
+    def store_data(self):
 
