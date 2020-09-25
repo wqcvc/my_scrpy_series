@@ -14,7 +14,7 @@ class libDB():
         self.cursor = self.db.cursor()
 
     def create_table(self,sql:str):
-
+        pass
 
     def query(self, sql: str):
         try:

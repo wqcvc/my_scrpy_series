@@ -17,7 +17,7 @@ import logging
 class libFund():
     _current_time=datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
     def __init__(self,fund_code_list:list):
-        self.res=libScrpy().apply()
+        self.res=libScrpy()
         self.res.apply(fund_code_list[0])
 
 
@@ -25,6 +25,7 @@ class libFund():
         pass
 
     def rate_list_show(self,day:int):
+        pass
 
     def count_rate(self,day:int):
         pass
@@ -34,6 +35,7 @@ class libFund():
         数据展示方式
         :return:
         """
+        pass
 
 
 

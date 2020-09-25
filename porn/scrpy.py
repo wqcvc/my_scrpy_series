@@ -346,11 +346,13 @@ class My91DownLoad():
         start = time.time()
         ua=UserAgent()
         timeout=360
+        # 具体用法参考:  https://www.cnblogs.com/trojan-z/p/12072211.html
         launch_args = {
             "headless": True,  # 关闭无头浏览器
+            'devtools': False,  # 控制界面的显示，用来调试
             "args": [
                 "--start-maximized",
-                "--no-sandbox",
+                "--no-sandbox",    # --no-sandbox 在 docker 里使用时需要加入的参数，不然会报错
                 "--disable-infobars",
                 "--ignore-certificate-errors",
                 "--log-level=3",
@@ -359,6 +361,7 @@ class My91DownLoad():
                 f"\"--refer={self._favo_video_url}\"",
                 f"\"--user-agent={ua.random}\"",
             ],
+            'dumpio': True,  # 解决浏览器多开卡死
         }
         browser = await launch(**launch_args)
         page = await browser.newPage()
