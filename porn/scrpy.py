@@ -376,20 +376,21 @@ class My91DownLoad():
             'http.?://.*.91p\d{2}.com/.?mp43/.*.mp4\\?.*=.*f=[^"]*',
             'http.?://.*.91p48.com//mp43/.*.mp4\\?secure=.*&f=[^"]*'
         ]
-        url_re = re.findall(viode_re_rules[0], str(await page.content()))
-        url_re = list(set(url_re))
+        video_url = re.findall(viode_re_rules[0], str(await page.content()))
+        video_url = list(set(video_url))
         # fetch title
-        tittle = re.findall(r'<h4 class="login_register_header" align=left>(.*?)</h4>', str(await page.content()), re.S)
+        tittle_url = re.findall(r'<h4 class="login_register_header" align=left>(.*?)</h4>', str(await page.content()), re.S)
         # fetch img
         img_url = re.findall(r'poster="(.*?)"', str(await page.content()))
+        logger.info(f"origin url_data:\n{video_url}\n {tittle_url}\n {img_url}\n")
 
-        if not url_re or tittle or img_url:
+        if not video_url or tittle_url or img_url:
             logger.info(f"__pyppeteeer_newget return~")
             return None,None,None
         else:
-            video_f=url_re[0]
+            video_f=video_url[0]
             logger.info(f"video_url is:{video_f}")
-            temp_t = tittle[0].replace('\n', '')
+            temp_t = tittle_url[0].replace('\n', '')
             tittle_f = temp_t.replace(' ', '')
             logger.info(f"tiltle is:{tittle_f}")
             img_f=img_url[0]
