@@ -64,7 +64,7 @@ class My91DownLoad():
         #     t.start()
         # for in range(threads):
         #     t.join()
-        # self.download_videos(title_lists=list_titles, video_lists=list_videos)
+        self.download_videos(title_lists=list_titles, video_lists=list_videos)
 
     def fetch_subpage_urls(self, number: int = 0):
         """
@@ -342,7 +342,7 @@ class My91DownLoad():
         ctx.call("strencode",strencode[0],strencode[1])
 
     async def __pyppeteeer_newget(self,subpage_url):
-        logger.info(f"开始请求subpage_url:[{subpage_url}]")
+        logger.info(f"开始请求video_url")
         start = time.time()
         ua=UserAgent()
         timeout=360
@@ -365,41 +365,31 @@ class My91DownLoad():
         # 'https://0722.91p51.com/view_video.php?viewkey=5f1ce5096ebc088204d5&page=1&viewtype=basic&category=rf',timeout=60000)
         res = await page.goto(subpage_url, options={'timeout': timeout*1000})  # 跳转
         # await page.screenshot({'path': 'example.png'})  # 截图
-        # res.text()
-        # page.title()
-        # page.content()
-        # page.cookies()
-        # print(await page.content())
 
         # fecth video
         viode_re_rules = [
-            'http.?://.*.91p\d{2}.com/.?mp43/.*.mp4\\?.*=.*f=[^"]*',
-            'http.?://.*.91p48.com//mp43/.*.mp4\\?secure=.*&f=[^"]*'
+            '(http.?://.*.91p\d{2}.com/.?mp43/.*.mp4\\?.*=.*f=[^"]*)',
         ]
-        video_url = re.findall(viode_re_rules[0], str(await page.content()))
-        video_url = list(set(video_url))
-        # fetch title
-        tittle_url = re.findall(r'<h4 class="login_register_header" align=left>(.*?)</h4>', str(await page.content()), re.S)
-        # fetch img
-        img_url = re.findall(r'poster="(.*?)"', str(await page.content()))
-        logger.info(f"origin url_data:\n{video_url}\n {tittle_url}\n {img_url}\n")
+        video_ori = re.findall(viode_re_rules[0], str(await page.content()))
+        video_ori = list(set(video_ori))
+        logger.debug(f"video_ori is:{video_ori}\n")
+        # with open(self._current_day+"context"+".log",'a') as f:
+        #     f.write(await page.content())
 
-        if not video_url or tittle_url or img_url:
-            logger.info(f"__pyppeteeer_newget return~")
-            return None,None,None
+        if not video_ori:
+            logger.info(f"Error:__pyppeteeer_newget return~")
+            return None
         else:
-            video_f=video_url[0]
-            logger.info(f"video_url is:{video_f}")
-            temp_t = tittle_url[0].replace('\n', '')
-            tittle_f = temp_t.replace(' ', '')
-            logger.info(f"tiltle is:{tittle_f}")
-            img_f=img_url[0]
-            logger.debug(f"img_url is:{img_f}")
+            if len(video_ori) > 1:
+                video_f=min((word for word in video_ori if word), key=len)
+            else:
+                video_f=video_ori[0]
+            logger.info(f"\nvideo_f is:{video_f}\n")
 
         await browser.close()  # 关闭
         end = time.time()
         print(f"total run seconds: [{end-start}]")
-        return video_f,tittle_f,img_f
+        return video_f
 
 
     def fetch_video_urls_new(self,listB:list):
@@ -417,24 +407,47 @@ class My91DownLoad():
             logger.info(f"\n")
             logger.info(f"开始请求第[{i+1}]个subpage===>")
             ua = UserAgent() # ua.random
-            #  获取等video url 404: 需要解决这里的 cookies等加上获取等内容 == request获取内容
-            # referer need user subpage url
-            # headers = {
-            #     'Accept-Language': 'zh-CN,zh;q=0.9',
-            #     'User-Agent': ua.random,
-            #     'referer': listA[i],
-            #     'Content-Type': 'multipart/form-data; session_language=cn_CN',
-            #     'Connection': 'keep-alive',
-            #     'Upgrade-Insecure-Requests': '1',
-            # }
-            video_tmp,title_tmp,img_tmp=asyncio.get_event_loop().run_until_complete(self.__pyppeteeer_newget(subpage_url=listB[i]))
-            if not video_tmp or title_lists or image_lists:
-                logger.info(f"本次subpage解析(video,title,img)有数据不存在,退出第[{i+1}]次循环")
+            headers = {
+                'Accept-Language': 'zh-CN,zh;q=0.9',
+                'User-Agent': ua.random,
+                'referer': listB[i],
+                'Content-Type': 'multipart/form-data; session_language=cn_CN',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+            }
+            res2 = requests.request('GET', listB[i], headers=headers)
+            if res2.status_code != 200:
+                logger.info(f"subpage url:[{listB[i]}] retrun an Error: status_code:[{res2.status_code}]")
+                with open(self._current_day + '_request_subpage_failed.log', 'w', encoding='utf-8') as f:
+                    f.write(f"\n请求失败的subpage_url:[{listB[i]}]\n\n")
+            else:
+                logger.info(f"subpage url:[{listB[i]}],status_code: [{res2.status_code}]")
+                pass
+            # fetch title
+            tittle = re.findall(r'<h4 class="login_register_header" align=left>(.*?)</h4>', res2.text, re.S)
+            temp_t = tittle[0].replace('\n', '')
+            tittle_f = temp_t.replace(' ', '')
+            logger.info(f"tiltle is:{tittle_f}")
+            # fetch img
+            img_url = re.findall(r'poster="(.*?)"', str(res2.text))
+            img_f=img_url[0]
+            # with open("xxx.log",'a',encoding='UTF-8') as f:
+            #     f.write(res2.text)
+            logger.debug(f"img_url is:{img_f}")
+            # fetch video
+            time.sleep(5)
+            video_f=asyncio.get_event_loop().run_until_complete(self.__pyppeteeer_newget(subpage_url=listB[i]))
+
+            if not (video_f or tittle_f): #or img_f:
+                logger.info(f"本次subpage解析(video,title)有数据不存在,退出第[{i+1}]次循环")
                 continue
             else:
-                video_lists.append(video_tmp)
-                title_lists.append(title_lists)
-                image_lists.append(img_tmp)
+                video_lists.append(video_f)
+                title_lists.append(tittle_f)
+                image_lists.append(img_f)
+
+        time.sleep(3)
+
 
         logger.info(f"共请求{len(listB)}个,成功请求[{len(video_lists)}]个...")
         with open(self.log_dir + '/' + self._current_day + '_video_lists.log', "w") as f:
@@ -455,4 +468,4 @@ class My91DownLoad():
 if __name__ == '__main__':
     f = My91DownLoad()
     #最大number=25 [作为游客，你每天只可观看25个视频]
-    f.start(number=2)
+    f.start(number=20)
