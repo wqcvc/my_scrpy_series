@@ -118,16 +118,18 @@ class libScrpy():
         }
         browser = await launch(**launch_args)
         page = await browser.newPage()
-        resp = await page.goto(url=url)
+        resp = await page.goto(url=url,timeout=10000)
         if resp.status != 200:
             logger.info(f"Error resp.status code: {resp.status}.")
             return
+        await page.content()
+        # logger.info(f"type: {type(await page.content())} {type(context)}")
         await browser.close()  # 关闭
 
         end_time = time()
         logger.info(f"pyppeteer_request cost seconds:{end_time - start_time}")
 
-        return page.content()
+        return context
 
     def proxy_pool_set(self):
         """
@@ -138,5 +140,6 @@ class libScrpy():
 
 if __name__ == "__main__":
     scrpp=libScrpy()
-    resp=scrpp.single_request('512000')
-    print(resp)
+    resp=scrpp.single_request('512000',1)
+    # resp=scrpp.single_request('512000')
+    # print(resp)
