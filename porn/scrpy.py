@@ -66,6 +66,17 @@ class My91DownLoad():
         #     t.join()
         self.download_videos(title_lists=list_titles, video_lists=list_videos)
 
+    def start_page(self,page:int):
+        """
+        从指定页数统一开始请求+下载
+        :type page: int 页数
+        :return:
+        """
+        list_urls=self.fetch_specific_page(page=page)
+        list_videos, list_titles, list_images = self.fetch_video_urls_new(list_urls)
+        self.download_videos(title_lists=list_titles, video_lists=list_videos)
+
+
     def fetch_subpage_urls(self, number: int = 0):
         """
         主入口:index页面去取得子详情页url
@@ -77,7 +88,7 @@ class My91DownLoad():
         url_list = []
         ua = UserAgent()
         for page in range(pages):
-            current_url = config['urls']['index_page'].replace("page=1", f"page={page + 1}")
+            current_url = config['urls']['index_page'].replace("page=xxx", f"page={page + 1}")
             # current_url = self._favo_video_url.replace("page=1", f"page={page + 1}")
             logger.info(f"start request index url : {current_url}")
             headers = {
@@ -429,13 +440,13 @@ class My91DownLoad():
             tittle_f = temp_t.replace(' ', '')
             logger.info(f"tiltle is:{tittle_f}")
             # fetch img
-            img_url = re.findall(r'poster="(.*?)"', str(res2.text))
-            img_f=img_url[0]
+            # img_url = re.findall(r'poster="(.*?)"', str(res2.text))
+            # img_f=img_url[0]
             # with open("xxx.log",'a',encoding='UTF-8') as f:
             #     f.write(res2.text)
-            logger.debug(f"img_url is:{img_f}")
+            # logger.debug(f"img_url is:{img_f}")
             # fetch video
-            time.sleep(5)
+            # time.sleep(5)
             video_f=asyncio.get_event_loop().run_until_complete(self.__pyppeteeer_newget(subpage_url=listB[i]))
 
             if not (video_f or tittle_f): #or img_f:
@@ -444,7 +455,7 @@ class My91DownLoad():
             else:
                 video_lists.append(video_f)
                 title_lists.append(tittle_f)
-                image_lists.append(img_f)
+                image_lists.append("1")
 
         time.sleep(3)
 
@@ -463,9 +474,42 @@ class My91DownLoad():
 
         return video_lists, title_lists, image_lists
 
+    def fetch_specific_page(self, page: int = 0):
+        """
+        func:指定具体的要抓取的index页数
+        page: 爬去subpage的具体页数,eg:page=2 抓取导航页第2页中的所有subpage链接
+        :return:
+        """
+        url_list = []
+        ua = UserAgent()
+
+        current_url = config['urls']['index_page'].replace("page=xxx", f"page={page}")
+        logger.info(f"start request index url : {current_url}. page页数:{page}")
+        headers = {
+            'User-Agent': ua.random,
+            'Referer': current_url,
+        }
+        res1 = requests.request('GET', current_url, headers=headers)
+        logger.debug(f"res1.status_code : {res1.status_code}")
+        logger.debug(f"res1.text include: {res1.text}")
+
+        logger.info(f"start parse: get all subpage urls:")
+        subpage_re_rules = [
+            'https://0722.91p51.com/view_video.php\\?viewkey=.*&page=.*&viewtype=.*&category=.{2}',
+            'temp'
+        ]
+        url_list_page = re.findall(subpage_re_rules[0], res1.text)
+        # url_list_page = re.findall(config['rules']['sub_page_rule'],res1.text)
+        url_list_set = list(set(url_list_page))
+        for i in range(len(url_list_set)):
+            url_list.append(url_list_set[i])
+        logger.info(f"当前页一共解析了subpage urls: {len(url_list_set)}个.返回准备开始下一步")
+
+        return url_list
 
 
 if __name__ == '__main__':
     f = My91DownLoad()
     #最大number=25 [作为游客，你每天只可观看25个视频]
-    f.start(number=20)
+    # f.start(number=23)
+    f.start_page(page=2)
