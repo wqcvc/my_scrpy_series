@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 config = ConfigParser()
 config.read("urls_rules.ini")
 
-logger.info(f"[{config['urls']['index_page']}]")
+logger.info(f"[{config['video_urls']['index_page']}]")
 logger.info(f"[{config['rules']['sub_page_rule']}]")
 logger.info(f"[{config['rules']['video_rule']}]")
 
@@ -46,7 +46,7 @@ class My91DownLoad():
         if not os.path.exists(self.storage_dir):
             os.makedirs(self.storage_dir)
 
-    def start(self, number: int = 0):
+    def start_by_number(self, number: int = 0):
         """
         统一开始请求+下载入口
         :type number: int 下载个数，超过每页24 自动翻页
@@ -66,7 +66,7 @@ class My91DownLoad():
         #     t.join()
         self.download_videos(title_lists=list_titles, video_lists=list_videos)
 
-    def start_page(self,page:int):
+    def start_by_page(self,page:int):
         """
         从指定页数统一开始请求+下载
         :type page: int 页数
@@ -88,7 +88,7 @@ class My91DownLoad():
         url_list = []
         ua = UserAgent()
         for page in range(pages):
-            current_url = config['urls']['index_page'].replace("page=xxx", f"page={page + 1}")
+            current_url = config['video_urls']['index_page'].replace("page=xxx", f"page={page + 1}")
             # current_url = self._favo_video_url.replace("page=1", f"page={page + 1}")
             logger.info(f"start request index url : {current_url}")
             headers = {
@@ -105,7 +105,7 @@ class My91DownLoad():
                 'temp'
             ]
             url_list_page = re.findall(subpage_re_rules[0], res1.text)
-            # url_list_page = re.findall(config['rules']['sub_page_rule'],res1.text)
+            # url_list_page = re.findall(config['video_urls']['sub_page_rule'],res1.text)
             url_list_set = list(set(url_list_page))
             for i in range(len(url_list_set)):
                 url_list.append(url_list_set[i])
@@ -172,7 +172,7 @@ class My91DownLoad():
                 'http.?://.*.91p48.com//mp43/.*.mp4\\?secure=.*&f=[^"]*'
             ]
             url_re = re.findall(viode_re_rules[0], str(res2.text))
-            # url_re = re.findall(config['rules']['video_rule'], str(res2.text))
+            # url_re = re.findall(config['video_urls']['video_rule'], str(res2.text))
             url_re = list(set(url_re))
 
             if url_re:
@@ -278,7 +278,7 @@ class My91DownLoad():
                 pass
 
             if os.path.exists(current_day_dir+'/'+video_name):
-                logger.info(f"video file: [{video_name}] already exist in [{current_day_dir}].will continue~\n")
+                logger.info(f"video:[{video_name}]在目录:[{current_day_dir}]已经存在.将跳过~\n")
                 continue
             else:
                 logger.info(f"start download.")
@@ -483,7 +483,7 @@ class My91DownLoad():
         url_list = []
         ua = UserAgent()
 
-        current_url = config['urls']['index_page'].replace("page=xxx", f"page={page}")
+        current_url = config['video_urls']['index_page'].replace("page=xxx", f"page={page}")
         logger.info(f"start request index url : {current_url}. page页数:{page}")
         headers = {
             'User-Agent': ua.random,
@@ -499,7 +499,7 @@ class My91DownLoad():
             'temp'
         ]
         url_list_page = re.findall(subpage_re_rules[0], res1.text)
-        # url_list_page = re.findall(config['rules']['sub_page_rule'],res1.text)
+        # url_list_page = re.findall(config['video_urls']['sub_page_rule'],res1.text)
         url_list_set = list(set(url_list_page))
         for i in range(len(url_list_set)):
             url_list.append(url_list_set[i])
@@ -507,9 +507,20 @@ class My91DownLoad():
 
         return url_list
 
+    def fetch_beautiful_img(self,page,number):
+        """
+        抓取图片 from video_urls:index_page
+        """
+        #  https://f1022.wonderfulday27.live/
+        # viewthread.php?tid=392534&extra=page%3D1
+        # viewthread.php?tid=392524&extra=page%3D1
+        # viewthread.php?tid=392496&extra=page%3D2
+        # https://p.91p49.com/attachments//20100610052dbedbadc65463e5.jpg
+        pass
+
 
 if __name__ == '__main__':
     f = My91DownLoad()
     #最大number=25 [作为游客，你每天只可观看25个视频]
-    # f.start(number=23)
-    f.start_page(page=2)
+    # f.start_by_number(number=23)
+    f.start_by_page(page=1)
