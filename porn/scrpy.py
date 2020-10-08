@@ -252,7 +252,7 @@ class My91DownLoad():
             headers = {
                 'User-Agent': ua.random,
                 # 'Host': 'cfdc.91p52.com',
-                # 'Accept': 'text / html, application / xhtml + xml, application / xml;q = 0.9, image / webp, image / apng, * / *;q = 0.8, application / signed - exchange;v = b3;q = 0.9',
+                # 'Accept': ''
                 # 'Accept - Encoding': 'gzip, deflate, br',
                 # 'Accept - Language': 'zh - CN, zh;q = 0.9, en;q = 0.8',
                 # 'Cache - Control': 'max - age = 0',
@@ -265,12 +265,16 @@ class My91DownLoad():
                 # 'Upgrade - Insecure - Requests': '1',
                 'Referer': self._favo_video_url,
                 # 'cookie':'',
-            }  # Referer？ video url不正确  #看一下对应的链接 请求头
+            }
             logger.info(f"共[{len(video_lists)}]个视频,开始下载第[{i+1}]个======>")
             logger.info(f"第[{i+1}]个[{title_lists[i]}]:[{video_lists[i]}]\n")
-            res3 = requests.request('GET', url=video_lists[i], headers=headers)
-            total_length = int(res3.headers.get("Content-Length"))
-            logger.info(f"该文件大小:[{total_length // (1024 * 1024)}]M.")
+            try:
+                res3 = requests.request('GET', url=video_lists[i], headers=headers,timeout=600)
+                total_length = int(res3.headers.get("Content-Length"))
+                logger.info(f"该文件大小:[{total_length // (1024 * 1024)}]M.")
+            except Exception as e:
+                logger.info(f"第[{i+1}]个下载[{title_lists[i]}] timeout超过阀值 600s.跳过此次请求\n")
+                continue
             if res3.status_code != 200:
                 logger.info(f"video download failed:[{video_lists[i]}] status_code:[{res3.status_code}]")
                 continue
@@ -281,7 +285,7 @@ class My91DownLoad():
                 logger.info(f"video:[{video_name}]在目录:[{current_day_dir}]已经存在.将跳过~\n")
                 continue
             else:
-                logger.info(f"start download.")
+                logger.info(f"开始下载...")
                 with open(current_day_dir + '/' + video_name, "wb") as f:
                     widgets = ['Progress: ', Percentage(), ' ', Bar('#'), ' ', Timer(), ' ', ETA(), ' ',
                                FileTransferSpeed()]
@@ -295,7 +299,7 @@ class My91DownLoad():
                             dl += len(chunk)
                         down_progress.update(dl)
                     down_progress.finish()
-                logger.info(f"download success.\n")
+                logger.info(f"下载成功...\n")
             time.sleep(5)
         logger.info(f"all url in video_lists downloand success!!!wonderful!!!")
 
@@ -357,11 +361,13 @@ class My91DownLoad():
         start = time.time()
         ua=UserAgent()
         timeout=360
+        # 具体用法参考:  https://www.cnblogs.com/trojan-z/p/12072211.html
         launch_args = {
             "headless": True,  # 关闭无头浏览器
+            'devtools': False,  # 控制界面的显示，用来调试
             "args": [
                 "--start-maximized",
-                "--no-sandbox",
+                "--no-sandbox",    # --no-sandbox 在 docker 里使用时需要加入的参数，不然会报错
                 "--disable-infobars",
                 "--ignore-certificate-errors",
                 "--log-level=3",
@@ -370,12 +376,14 @@ class My91DownLoad():
                 f"\"--refer={self._favo_video_url}\"",
                 f"\"--user-agent={ua.random}\"",
             ],
+            'dumpio': True,  # 解决浏览器多开卡死
         }
         browser = await launch(**launch_args)
         page = await browser.newPage()
         # 'https://0722.91p51.com/view_video.php?viewkey=5f1ce5096ebc088204d5&page=1&viewtype=basic&category=rf',timeout=60000)
         res = await page.goto(subpage_url, options={'timeout': timeout*1000})  # 跳转
         # await page.screenshot({'path': 'example.png'})  # 截图
+        # page.title() res.status res.headers
 
         # fecth video
         viode_re_rules = [

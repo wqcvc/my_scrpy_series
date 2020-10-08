@@ -9,37 +9,137 @@
 """
 import requests
 import os
-import execjs
 import datetime
-import re
 import logging
+from fake_useragent import UserAgent
+from pyppeteer import launch
+import asyncio
+from time import time
 
-logging.basicConfig(level=logging.INFO,format='%(asctime)s - %(levelname)s - %(message)s')
-logger=logging.getLogger()
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger()
 
 
 class libScrpy():
-    _data_source_url='http://fund.eastmoney.com/xxx.html'
+    _data_source_url = 'http://fund.eastmoney.com/xxx.html'
     # f"http://fund.eastmoney.com/{code}.html"
     # http: // fundf10.eastmoney.com / jjjz_270002.html
-    _current_time=datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-
+    _current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
     def __init__(self):
         pass
 
-    def apply(self,url):
+    def __url_combine(self, code):
         """
-        爬
-        :param url:抓qu地址
+        根据code转换成对应的url
+        :param code:
         :return:
         """
+        fund_url = self._data_source_url.replace('xxx', code)
+        logger.debug(f"__url_combine url:{fund_url}")
+        return fund_url
 
-    def re_match_rule(self):
+    def single_request(self, code: str, method: int = 0):
         """
-
+        单个
+        :param code:fund代码
+        :param method:请求方式request/pyppeteer
+        :param url:单个url
         :return:
         """
+        url = self.__url_combine(code)
+        assert url, "url为空"
+        if method == 0:
+            logger.info("request method")
+            resp = self.request_method(url=url)
 
-    def store_data(self):
+        elif method == 1:
+            logger.info(f"pyppeteer method.")
+            resp = asyncio.get_event_loop().run_until_complete(self.pyppeteer_method(url=url))
+        else:
+            logger.info(f"dont support this method.")
+            return
+        return resp
 
+    def mult_request(self, urls: list):
+        """
+        一起
+        :param urls:多个url
+        :return:
+        """
+        pass
+
+    def request_method(self, url):
+        """
+        使用request库
+        :param url:
+        :return:
+        """
+        ua = UserAgent()
+        headers = {
+            'refer': 'http://fund.eastmoney.com/',
+            'User-Agent': ua.random
+        }
+        start_time = time()
+        resp = requests.request(method="GET", url=url, headers=headers)
+
+        if resp.status_code != 200:
+            logger.info(f"Error url response status_code:{resp.status_code}")
+            return
+
+        end_time = time()
+        logger.info(f"pyppeteer_request cost seconds:{end_time - start_time}")
+
+        return resp.text
+
+    async def pyppeteer_method(self, url):
+        """
+        使用pyppeteer库
+        :param url:
+        :return:
+        """
+        start_time = time()
+        ua = UserAgent()
+        launch_args = {
+            "headless": True,
+            'devtools': False,  # 控制界面的显示，用来调试
+            "args": [
+                "--start-maximized",
+                "--no-sandbox",  # --no-sandbox 在 docker 里使用时需要加入的参数，不然会报错
+                "--disable-infobars",
+                "--ignore-certificate-errors",
+                "--log-level=3",
+                "--enable-extensions",
+                "--window-size=1920,1080",
+                "--refer=http://fund.eastmoney.com",
+                f"\"--user-agent={ua.random}\"",
+            ],
+            'dumpio': True,  # 解决浏览器多开卡死
+        }
+        browser = await launch(**launch_args)
+        page = await browser.newPage()
+        resp = await page.goto(url=url,timeout=10000)
+        if resp.status != 200:
+            logger.info(f"Error resp.status code: {resp.status}.")
+            return
+        await page.content()
+        # logger.info(f"type: {type(await page.content())} {type(context)}")
+        await browser.close()  # 关闭
+
+        end_time = time()
+        logger.info(f"pyppeteer_request cost seconds:{end_time - start_time}")
+
+        return context
+
+    def proxy_pool_set(self):
+        """
+        代理设置
+        :return:
+        """
+        pass
+
+if __name__ == "__main__":
+    scrpp=libScrpy()
+    resp=scrpp.single_request('512000',1)
+    # resp=scrpp.single_request('512000')
+    # print(resp)
