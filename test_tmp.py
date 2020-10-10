@@ -259,72 +259,72 @@
 #
 #     # js_exec(sts)
 #
-# import logging
-#
-# logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-# logger = logging.getLogger()
-#
-# logger.info(f"?????")
-#
-# from pyppeteer import launch
-# import asyncio
-# import asyncio
-# from pyppeteer import launch
-# import time
-# import re
-#
-# async def main():
-#     start = time.time()
-#     launch_args = {
-#         "headless": True,  # 关闭无头浏览器
-#         "dumpio": True,
-#         "args": [
-#             "--start-maximized",
-#             "--no-sandbox",
-#             "--disable-infobars",
-#             "--ignore-certificate-errors",
-#             "--log-level=3",
-#             "--enable-extensions",
-#             "--window-size=1920,1080",
-#             "--refer=https://0722.91p51.com/video.php?category=rf&page=1",
-#             "--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36",
-#         ],
-#     }
-#     browser = await launch(**launch_args)
-#     page = await browser.newPage()
-#     res = await page.goto(
-#         'https://0722.91p51.com/view_video.php?viewkey=ebaec4277896006083f7&page=1&viewtype=basic&category=rf',timeout=360000)  # 跳转
-#         # 'https://www.baidu.com', options={'timeout': 30000})  # 跳转
-#     await page.screenshot({'path': 'example.png'})  # 截图
-#
-#     res.text()
-#     page.title()
-#     page.content()
-#     page.cookies()
-#
-#     print(await page.content())
-#     # dimensions = await page.evaluate('document.write(strencode("9d806mYY9cYo7oWqKCrILLKHOS+fFbBXCabDhAGK0/NfD6ALbTWDbdE3JSmdqNqE3G6D7Ai+CdGjjPE1bwhQ7m6G/vvYQmEu9+d49O3Ng6FKV/HLUV+W94+oKYp0PffPULwNxi3WAWChd9VW4mn/TEkk4LuMlUt8O31MwUI7+eKahSXGYg/Sc7kMKUuVNvY3JqyiLKgwqV46pRTB2mcHWnZ6L5x82hTwz7iWOYUx281x+Uf3THSAIYi+4/1Lxu5A42BfH0mMhCA","aSx2RlI1EzNjMBsVVAIaSAFxGnkoBAp+AyoSDBwPEDIPCwk8CwUSMnxCABAmZXk6AAwWdC8dfUkFBwpUPwoWMFEfd3RncicbEzIvOz5gMUQAGlk4ZTlSK2MgMBEdOjIMd0c2fW8IUCM9XHcmGGsCJwM6fWNtcEMlKmtBAgQPEjo2fBh8LgAKZhJldgAyYToSUF00azAAPR9RJyMINT5NYS1dVQAjExt4cj0NFCcHGiY7Ih8lLWBSHxINPwQDDB90HTQ3HSgDIUMiOm5XKj8OKmFfWj8BAwsEGGALSmQ9bTQeBAovAg86CmBvUk1JHSR4Dg4BNCogCkxQZ107IiEFL1BfLg0SZ1U7ChsACS5CBAs=","9d806mYY9cYo7oWqKCårILLKHOS+fFbBXCabDhAGK0/NfD6ALbTWDbdE3JSmdqNqE3G6D7Ai+CdGjjPE1bwhQ7m6G/vvYQmEu9+d49O3Ng6FKV/HLUV+W94+oKYp0PffPULwNxi3WAWChd9VW4mn/TEkk4LuMlUt8O31MwUI7+eKahSXGYg/Sc7kMKUuVNvY3JqyiLKgwqV46pRTB2mcHWnZ6L5x82hTwz7iWOYUx281x+Uf3THSAIYi+4/1Lxu5A42BfH0mMhCA2"));')
-#     #
-#     # print(dimensions)
-#     #  </script><source src="http://cfdc.91p52.com//mp43/398448.mp4?st=6Ta5l-nsLaLzyTZ-yCqXGQ&amp;f=3b26v3jC54hMPtndpdcyh05/AuOKuhPemII6Umr52vsXuwE2iZJcnkgLEAKsT5PNBHVH2ALPBQDURu9EmJmaE6DRCXlnAFS2IHUw+Jo" type="video/mp4">
-#     url_re = re.findall('http.?://.*.91p\d{2}.com/.?mp43/.*.mp4\\?.*=.*f=[^"]*', str(await page.content()))
-#     tittle = re.findall(r'<h4 class="login_register_header" align=left>(.*?)</h4>', str(await page.content()), re.S)
-#     img_url = re.findall(r'poster="(.*?)"', str(await page.content()))
-#
-#     await browser.close()  # 关闭
-#
-#     end = time.time()
-#
-#     print(f"total run seconds: [{end - start}]")
-#     return url_re,tittle,img_url
-#
-# s1,s2,s3=asyncio.get_event_loop().run_until_complete(main())
-# print(f"ssss is :{s1,s2,s3}")
-# from fake_useragent import  UserAgent
-#
-# ua=UserAgent()
-# print(f"\"--user-agent={ua.random}\"")
-#
+import logging
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger()
+
+logger.info(f"?????")
+
+from pyppeteer import launch
+import asyncio
+import asyncio
+from pyppeteer import launch
+import time
+import re
+
+async def main():
+    start = time.time()
+    launch_args = {
+        "headless": True,  # 关闭无头浏览器
+        "dumpio": True,
+        "args": [
+            "--start-maximized",
+            "--no-sandbox",
+            "--disable-infobars",
+            "--ignore-certificate-errors",
+            "--log-level=3",
+            "--enable-extensions",
+            "--window-size=1920,1080",
+            "--refer=https://0722.91p51.com/video.php?category=rf&page=1",
+            "--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36",
+        ],
+    }
+    browser = await launch(**launch_args)
+    page = await browser.newPage()
+    res = await page.goto(
+        'https://0722.91p51.com/view_video.php?viewkey=ebaec4277896006083f7&page=1&viewtype=basic&category=rf',timeout=360000)  # 跳转
+        # 'https://www.baidu.com', options={'timeout': 30000})  # 跳转
+    await page.screenshot({'path': 'example.png'})  # 截图
+
+    res.text()
+    page.title()
+    page.content()
+    page.cookies()
+
+    print(await page.content())
+    # dimensions = await page.evaluate('document.write(strencode("9d806mYY9cYo7oWqKCrILLKHOS+fFbBXCabDhAGK0/NfD6ALbTWDbdE3JSmdqNqE3G6D7Ai+CdGjjPE1bwhQ7m6G/vvYQmEu9+d49O3Ng6FKV/HLUV+W94+oKYp0PffPULwNxi3WAWChd9VW4mn/TEkk4LuMlUt8O31MwUI7+eKahSXGYg/Sc7kMKUuVNvY3JqyiLKgwqV46pRTB2mcHWnZ6L5x82hTwz7iWOYUx281x+Uf3THSAIYi+4/1Lxu5A42BfH0mMhCA","aSx2RlI1EzNjMBsVVAIaSAFxGnkoBAp+AyoSDBwPEDIPCwk8CwUSMnxCABAmZXk6AAwWdC8dfUkFBwpUPwoWMFEfd3RncicbEzIvOz5gMUQAGlk4ZTlSK2MgMBEdOjIMd0c2fW8IUCM9XHcmGGsCJwM6fWNtcEMlKmtBAgQPEjo2fBh8LgAKZhJldgAyYToSUF00azAAPR9RJyMINT5NYS1dVQAjExt4cj0NFCcHGiY7Ih8lLWBSHxINPwQDDB90HTQ3HSgDIUMiOm5XKj8OKmFfWj8BAwsEGGALSmQ9bTQeBAovAg86CmBvUk1JHSR4Dg4BNCogCkxQZ107IiEFL1BfLg0SZ1U7ChsACS5CBAs=","9d806mYY9cYo7oWqKCårILLKHOS+fFbBXCabDhAGK0/NfD6ALbTWDbdE3JSmdqNqE3G6D7Ai+CdGjjPE1bwhQ7m6G/vvYQmEu9+d49O3Ng6FKV/HLUV+W94+oKYp0PffPULwNxi3WAWChd9VW4mn/TEkk4LuMlUt8O31MwUI7+eKahSXGYg/Sc7kMKUuVNvY3JqyiLKgwqV46pRTB2mcHWnZ6L5x82hTwz7iWOYUx281x+Uf3THSAIYi+4/1Lxu5A42BfH0mMhCA2"));')
+    #
+    # print(dimensions)
+    #  </script><source src="http://cfdc.91p52.com//mp43/398448.mp4?st=6Ta5l-nsLaLzyTZ-yCqXGQ&amp;f=3b26v3jC54hMPtndpdcyh05/AuOKuhPemII6Umr52vsXuwE2iZJcnkgLEAKsT5PNBHVH2ALPBQDURu9EmJmaE6DRCXlnAFS2IHUw+Jo" type="video/mp4">
+    url_re = re.findall('http.?://.*.91p\d{2}.com/.?mp43/.*.mp4\\?.*=.*f=[^"]*', str(await page.content()))
+    tittle = re.findall(r'<h4 class="login_register_header" align=left>(.*?)</h4>', str(await page.content()), re.S)
+    img_url = re.findall(r'poster="(.*?)"', str(await page.content()))
+
+    await browser.close()  # 关闭
+
+    end = time.time()
+
+    print(f"total run seconds: [{end - start}]")
+    return url_re,tittle,img_url
+
+s1,s2,s3=asyncio.get_event_loop().run_until_complete(main())
+print(f"ssss is :{s1,s2,s3}")
+from fake_useragent import  UserAgent
+
+ua=UserAgent()
+print(f"\"--user-agent={ua.random}\"")
+
 import  re
 str="""https://img2.t6k.co/thumb/399042.jpg" preload="auto" class="video-js vjs-sublime-skin vjs-16-9 vjs-paused player_one-dimensions vjs-workinghover vjs-v7 vjs-user-active vjs-error vjs-controls-disabled" id="player_one" tabindex="-1" lang="en-us" role="region" aria-label="Video Player" style="visibility: visible;"><video id="player_one_html5_api" class="vjs-tech" preload="auto" poster="https://img2.t6k.co/thumb/399042.jpg" data-setup="{}" tabindex="-1" src="https://cfdc.91p52.com//mp43/399042.mp4?st=c812BSP58uMPGq0pIm4PRw&amp;f=4f77LAv/WNUGF2Obxoo0zbqWt/T6KB/x7ysBtve3eAFw+7QvChJmHOZRspwxmM5sxTy4QWfWrDqVaF/4rioVajoE/qH/wF/vrZPQ2w"""
 str2="""https://ccn.91p52.com//mp43/399037.mp4?st=WGDUdhJH_yxw0RO4kg_fxw&amp;f=5367IaGnenGddK7hp1KY3qA80lfhSkKKX6ixx6W9IHOh8R8ee8E6Y98nIGIkx5r5FWoBXoU6jNXQoNVzSnvdDGgCUaOasC0BfKdc9Q"""

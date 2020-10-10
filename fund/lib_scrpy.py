@@ -16,7 +16,7 @@ from pyppeteer import launch
 import asyncio
 from time import time
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(levelname)s %(asctime)s [%(pathname)s %(funcName)s %(lineno)d] %(message)s')
 logger = logging.getLogger()
 
 
@@ -50,14 +50,14 @@ class libScrpy():
         url = self.__url_combine(code)
         assert url, "url为空"
         if method == 0:
-            logger.info("request method")
+            logger.info("func:single_request in request-method")
             resp = self.request_method(url=url)
 
         elif method == 1:
-            logger.info(f"pyppeteer method.")
+            logger.info(f"func:single_request in pyppeteer-method.")
             resp = asyncio.get_event_loop().run_until_complete(self.pyppeteer_method(url=url))
         else:
-            logger.info(f"dont support this method.")
+            logger.info(f"func:single_request dont support this method.")
             return
         return resp
 
@@ -82,15 +82,16 @@ class libScrpy():
         }
         start_time = time()
         resp = requests.request(method="GET", url=url, headers=headers)
+        logger.info(resp.status_code)
 
         if resp.status_code != 200:
             logger.info(f"Error url response status_code:{resp.status_code}")
             return
 
         end_time = time()
-        logger.info(f"pyppeteer_request cost seconds:{end_time - start_time}")
+        logger.info(f"cost seconds:{end_time - start_time}")
 
-        return resp.text
+        return resp
 
     async def pyppeteer_method(self, url):
         """
@@ -119,17 +120,16 @@ class libScrpy():
         browser = await launch(**launch_args)
         page = await browser.newPage()
         resp = await page.goto(url=url,timeout=10000)
+        logger.info(f"resp.status code:{resp.status}")
         if resp.status != 200:
             logger.info(f"Error resp.status code: {resp.status}.")
-            return
-        await page.content()
-        # logger.info(f"type: {type(await page.content())} {type(context)}")
-        await browser.close()  # 关闭
-
+            return None
+        text=await page.content()
+        await browser.close()
         end_time = time()
-        logger.info(f"pyppeteer_request cost seconds:{end_time - start_time}")
+        logger.info(f"cost seconds:{end_time - start_time}")
 
-        return context
+        return text
 
     def proxy_pool_set(self):
         """
@@ -138,8 +138,8 @@ class libScrpy():
         """
         pass
 
-if __name__ == "__main__":
-    scrpp=libScrpy()
-    resp=scrpp.single_request('512000',1)
-    # resp=scrpp.single_request('512000')
-    # print(resp)
+# if __name__ == "__main__":
+#     scrpp=libScrpy()
+#     resp=scrpp.single_request('512000',1)
+#     # resp=scrpp.single_request('512000')
+#     # print(resp)
