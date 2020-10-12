@@ -11,6 +11,8 @@ from lib_scrpy import libScrpy
 from lib_logger import MyLogger
 import datetime
 import re
+import requests
+import time
 
 
 class libFund(MyLogger):
@@ -28,6 +30,12 @@ class libFund(MyLogger):
         """
         jjjz=[]
         name=[]
+        #拿基金的估算净值
+        resxxx=requests.get(url='http://fundgz.1234567.com.cn/js/002621.js')
+        # resxxx=requests.get(url='http://fundgz.1234567.com.cn/js/270002.js')
+        resxxx.encoding="utf-8"
+        tmp1=re.findall('"gszzl":"(.*?)"',str(resxxx.text))
+        print(tmp1)
         for i in range(len(self.fund_list)):
             self.logger.info(f"request fund_code:[{self.fund_list[i]}]")
             text = self.res.single_request(self.fund_list[i], method=0)
@@ -35,6 +43,7 @@ class libFund(MyLogger):
             jjjz.append(jjjz_tmp)
             name.append(name_tmp)
 
+        #展示基金名字+实时估算净值
         for i in range(len(name)):
             self.logger.info(f"[{name[i]}:{jjjz[i]}]")
 
@@ -88,6 +97,6 @@ class libFund(MyLogger):
 
 
 if __name__ == "__main__":
-    fund_code_list = ['512000','270002','000478','110035','001210','008488','001938','002621']
+    fund_code_list = ['512000','270002'] #,'000478','110035','001210','008488','001938','002621']
     ff = libFund(fund_code_list)
     ff.all_get()
