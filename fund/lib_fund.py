@@ -8,39 +8,35 @@
  @Author: terry.wang
 """
 from lib_scrpy import libScrpy
+from lib_logger import MyLogger
 import datetime
-import io
-import os
-import logging
-import traceback
+import re
 
 
-class libFund():
+class libFund(MyLogger):
     _current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
 
-    def __init__(self , fund_code_list : list):
-        self.logger=Logger()
-        self.logger.setLevel(logging.INFO)
-        # self.logger.format()
-        self.logger.add_stream_handler()
-
+    def __init__(self, fund_code_list: list):
+        super().__init__(__name__)
         self.res = libScrpy()
         self.fund_list = fund_code_list
-        self.logger.info("3333")
-        # print(f"{self.logger.add_stream_handler()}")
-        # logger.info()
-
 
     def all_get(self):
         """
         请求入口
         :return:
         """
+        jjjz=[]
+        name=[]
         for i in range(len(self.fund_list)):
-            text = self.res.single_request(self.fund_list[i],method=0)
-            self.logger.info(f"currnet fund_code:{self.fund_list[i]}")
-            self.match_rule_re(content=text)
+            self.logger.info(f"request fund_code:[{self.fund_list[i]}]")
+            text = self.res.single_request(self.fund_list[i], method=0)
+            jjjz_tmp,name_tmp=self.match_rule_re(content=text)
+            jjjz.append(jjjz_tmp)
+            name.append(name_tmp)
 
+        for i in range(len(name)):
+            self.logger.info(f"[{name[i]}:{jjjz[i]}]")
 
     def match_rule_re(self, content):
         """
@@ -48,8 +44,17 @@ class libFund():
         :param content:
         :return:
         """
+        # <span class="ui-font-large  ui-num" id="gz_gsz">--</span>  .*? 非贪婪模式
+        re_rules={
+                'gz_gsz':'<span class="ui-font-large  ui-num" id="gz_gsz">(.*?)</span>',
+                'name':'<div class="fundDetail-tit"><div style="float: left">(.*?)<span>'
+                  }
+        # self.logger.info(content)
+        res1=re.findall(re_rules['gz_gsz'],str(content))
+        res2=re.findall(re_rules['name'],str(content))
+        # self.logger.info(f"re_match res is [{res1[0],res2[0]}]")
 
-        pass
+        return res1[0],res2[0]
 
     def match_rule_bs4(self, day: int):
         """
@@ -81,7 +86,8 @@ class libFund():
         """
         pass
 
-if __name__== "__main__":
-    fund_code_list=['512000','163406']
-    ff=libFund(fund_code_list)
+
+if __name__ == "__main__":
+    fund_code_list = ['512000','270002','000478','110035','001210','008488','001938','002621']
+    ff = libFund(fund_code_list)
     ff.all_get()

@@ -8,26 +8,23 @@
  @Author: terry.wang
 """
 import requests
-import os
 import datetime
-import logging
 from fake_useragent import UserAgent
 from pyppeteer import launch
 import asyncio
 from time import time
-
-logging.basicConfig(level=logging.INFO, format='%(levelname)s %(asctime)s [%(pathname)s %(funcName)s %(lineno)d] %(message)s')
-logger = logging.getLogger()
+from lib_logger import MyLogger
 
 
-class libScrpy():
+class libScrpy(MyLogger):
     _data_source_url = 'http://fund.eastmoney.com/xxx.html'
     # f"http://fund.eastmoney.com/{code}.html"
     # http: // fundf10.eastmoney.com / jjjz_270002.html
     _current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
     def __init__(self):
-        pass
+        super().__init__(__name__)
+        # self.logger=MyLogger("libScrpy")
 
     def __url_combine(self, code):
         """
@@ -36,12 +33,12 @@ class libScrpy():
         :return:
         """
         fund_url = self._data_source_url.replace('xxx', code)
-        logger.debug(f"__url_combine url:{fund_url}")
+        self.logger.debug(f"__url_combine url:{fund_url}")
         return fund_url
 
     def single_request(self, code: str, method: int = 0):
         """
-        单个
+        单个请求
         :param code:fund代码
         :param method:请求方式request/pyppeteer
         :param url:单个url
@@ -49,15 +46,16 @@ class libScrpy():
         """
         url = self.__url_combine(code)
         assert url, "url为空"
-        if method == 0:
-            logger.info("func:single_request in request-method")
+        self.logger.info(f"request url:[{url}])")
+        if method == 0:  # request请求
+            self.logger.info("request-method")
             resp = self.request_method(url=url)
 
-        elif method == 1:
-            logger.info(f"func:single_request in pyppeteer-method.")
+        elif method == 1:  # pyppeteer请求，获取动态js可以
+            self.logger.info(f"pyppeteer-method.")
             resp = asyncio.get_event_loop().run_until_complete(self.pyppeteer_method(url=url))
         else:
-            logger.info(f"func:single_request dont support this method.")
+            self.logger.info(f"dont support this method.")
             return
         return resp
 
@@ -82,16 +80,16 @@ class libScrpy():
         }
         start_time = time()
         resp = requests.request(method="GET", url=url, headers=headers)
-        logger.info(resp.status_code)
+        resp.encoding='utf-8'
+        self.logger.info(f"request status_code:[{resp.status_code}]")
 
         if resp.status_code != 200:
-            logger.info(f"Error url response status_code:{resp.status_code}")
+            self.logger.info(f"Error url response status_code:{resp.status_code}")
             return
 
         end_time = time()
-        logger.info(f"cost seconds:{end_time - start_time}")
-
-        return resp
+        self.logger.info(f"this request cost seconds:{end_time - start_time}")
+        return resp.text
 
     async def pyppeteer_method(self, url):
         """
@@ -119,21 +117,29 @@ class libScrpy():
         }
         browser = await launch(**launch_args)
         page = await browser.newPage()
-        resp = await page.goto(url=url,timeout=10000)
-        logger.info(f"resp.status code:{resp.status}")
+        resp = await page.goto(url=url, timeout=10000)
+        self.logger.info(f"resp.status code:{resp.status}")
         if resp.status != 200:
-            logger.info(f"Error resp.status code: {resp.status}.")
+            self.logger.info(f"Error resp.status code: {resp.status}.")
             return None
-        text=await page.content()
+        text = await page.content()
         await browser.close()
         end_time = time()
-        logger.info(f"cost seconds:{end_time - start_time}")
+        self.logger.info(f"this request cost seconds:{end_time - start_time}")
 
         return text
 
     def proxy_pool_set(self):
         """
         代理设置
+        :return:
+        """
+        pass
+
+    def save_to_file(self,content):
+        """
+        保存内容到文件
+        :param content:
         :return:
         """
         pass
