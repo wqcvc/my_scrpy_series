@@ -14,37 +14,48 @@ from pyppeteer import launch
 import asyncio
 from time import time
 from lib_logger import MyLogger
+import logging
 
 
 class libScrpy(MyLogger):
     _data_source_url = 'http://fund.eastmoney.com/xxx.html'
-    # f"http://fund.eastmoney.com/{code}.html"
+    _current_jjjz_url='http://fundgz.1234567.com.cn/js/xxx.js'
+    _history_jjjz_url='http://fundf10.eastmoney.com/jjjz_xxx.html'
     # http: // fundf10.eastmoney.com / jjjz_270002.html
     _current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
-    def __init__(self):
-        super().__init__(__name__)
+    def __init__(self,level=logging.INFO):
+        super().__init__(__name__,level=level)
         # self.logger=MyLogger("libScrpy")
 
-    def __url_combine(self, code):
+    def __url_combine(self, flag, code):
         """
-        根据code转换成对应的url
-        :param code:
+        生成对应需要的url
+        :param flag: 对应url的类型 1:_data_source_url基金主页 2:_current_jjjz_url实时净值 3:_history_jjjz_url历史净值
+        :param code: 基金代码
         :return:
         """
-        fund_url = self._data_source_url.replace('xxx', code)
+        if flag == 1:
+            fund_url = self._data_source_url.replace('xxx', code)
+        elif flag == 2:
+            fund_url = self._current_jjjz_url.replace('xxx', code)
+        elif flag == 3:
+            fund_url = self._history_jjjz_url.replace('xxx', code)
+        else:
+            self.logger.info("Unknown flag number,not Url.")
         self.logger.debug(f"__url_combine url:{fund_url}")
         return fund_url
 
-    def single_request(self, code: str, method: int = 0):
+    def single_request(self, code: str, flag: int = 1, method: int = 0):
         """
         单个请求
         :param code:fund代码
+        :param flag:决定具体请求url.对应url的类型 1:_data_source_url基金主页 2:_current_jjjz_url实时净值 3:_history_jjjz_url历史净值
         :param method:请求方式request/pyppeteer
         :param url:单个url
         :return:
         """
-        url = self.__url_combine(code)
+        url = self.__url_combine(flag,code)
         assert url, "url为空"
         self.logger.info(f"request url:[{url}])")
         if method == 0:  # request请求

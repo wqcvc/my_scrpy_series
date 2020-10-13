@@ -13,33 +13,33 @@ import datetime
 import re
 import requests
 import time
+import logging
 
 
 class libFund(MyLogger):
     _current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
 
-    def __init__(self, fund_code_list: list):
-        super().__init__(__name__)
-        self.res = libScrpy()
-        self.fund_list = fund_code_list
+    def __init__(self, fund_code_list: list = None,level=logging.INFO):
+        super().__init__(__name__,level)
+        self.res = libScrpy(level)
+        if fund_code_list:
+            self.fund_list = fund_code_list
+        else:#读取配置文件 基金列表
+            self.fund_list = 0
 
-    def all_get(self):
+    def current_jjjz(self, list_a: list = None):
         """
-        请求入口
+        基金实时涨跌幅 数据统一获取入口
         :return:
         """
-        jjjz=[]
-        name=[]
-        #拿基金的估算净值
-        resxxx=requests.get(url='http://fundgz.1234567.com.cn/js/002621.js')
-        # resxxx=requests.get(url='http://fundgz.1234567.com.cn/js/270002.js')
-        resxxx.encoding="utf-8"
-        tmp1=re.findall('"gszzl":"(.*?)"',str(resxxx.text))
-        print(tmp1)
-        for i in range(len(self.fund_list)):
-            self.logger.info(f"request fund_code:[{self.fund_list[i]}]")
-            text = self.res.single_request(self.fund_list[i], method=0)
-            jjjz_tmp,name_tmp=self.match_rule_re(content=text)
+        if not list_a:
+            list_a = self.fund_list
+        jjjz = []
+        name = []
+        for i in range(len(list_a)):
+            self.logger.info(f"request fund_code:[{list_a[i]}]")
+            text = self.res.single_request(list_a[i], flag=2,method=0)
+            name_tmp,jjjz_tmp=self.re_current_jjjz(content=text)
             jjjz.append(jjjz_tmp)
             name.append(name_tmp)
 
@@ -47,23 +47,56 @@ class libFund(MyLogger):
         for i in range(len(name)):
             self.logger.info(f"[{name[i]}:{jjjz[i]}]")
 
-    def match_rule_re(self, content):
+    def fund_income_estimate(self,):
         """
-        提取数据规则:使用re
+        根据基金持有份额 估算当前涨跌幅下的当日收益
+        :return:
+        """
+        pass
+
+    def fund_rate_estimate(self):
+        """
+        根据cost成本估算当前净值下的持有历史总收益率
+        :return:
+        """
+        pass
+
+    def fund_history_jjjz(self, day: int = 3):
+        """
+        历史净值展示
+        :param day:天数
+        :return:
+        """
+        pass
+
+
+    def re_current_jjjz(self, content):
+        """
+        func:匹配基金实时净值估算涨跌幅
         :param content:
         :return:
         """
-        # <span class="ui-font-large  ui-num" id="gz_gsz">--</span>  .*? 非贪婪模式
         re_rules={
                 'gz_gsz':'<span class="ui-font-large  ui-num" id="gz_gsz">(.*?)</span>',
-                'name':'<div class="fundDetail-tit"><div style="float: left">(.*?)<span>'
+                'name':'<div class="fundDetail-tit"><div style="float: left">(.*?)<span>',
+                'gsname':'"name":"(.*?)"',
+                'gszzl':'"gszzl":"(.*?)"'
                   }
-        # self.logger.info(content)
-        res1=re.findall(re_rules['gz_gsz'],str(content))
-        res2=re.findall(re_rules['name'],str(content))
-        # self.logger.info(f"re_match res is [{res1[0],res2[0]}]")
+        # res1=re.findall(re_rules['gz_gsz'],str(content))
+        # res2=re.findall(re_rules['name'],str(content))
+        name=re.findall(re_rules['gsname'],str(content))
+        gszzl=re.findall(re_rules['gszzl'],str(content))
 
-        return res1[0],res2[0]
+        return name[0],gszzl[0]
+
+
+    def match_rule_re(self, content):
+        """
+        func:正则匹配获取基金实时净值和名字
+        :param content:
+        :return:
+        """
+        pass
 
     def match_rule_bs4(self, day: int):
         """
@@ -81,9 +114,10 @@ class libFund(MyLogger):
         """
         pass
 
-    def data_storage(self):
+    def data_storage(self,method:int = 0):
         """
         数据存储:
+        :param method:0-mysql 1-sqlalchemy
         :return:
         """
         pass
@@ -98,5 +132,5 @@ class libFund(MyLogger):
 
 if __name__ == "__main__":
     fund_code_list = ['512000','270002'] #,'000478','110035','001210','008488','001938','002621']
-    ff = libFund(fund_code_list)
-    ff.all_get()
+    ff = libFund(fund_code_list,level=logging.INFO)
+    ff.current_jjjz()
