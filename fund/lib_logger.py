@@ -20,7 +20,7 @@ class MyLogger(logging.Logger):
         formatter = logging.Formatter(
             '[%(asctime)s] [%(levelname)s] [%(pathname)s %(funcName)s %(lineno)d] %(message)s', '%Y-%m-%d %H:%M:%S')
 
-        #console
+        # console
         ch = logging.StreamHandler()
         ch.setLevel(level=level)
         ch.setFormatter(formatter)
@@ -44,6 +44,7 @@ class MyLogger(logging.Logger):
 
     def error(self, message):
         self.logger.error(message)
+
     # def __get_cur_info(self):
     #     call_func=sys._getframe().f_code.co_name
     #     call_line=sys._getframe().f_lineno
@@ -55,8 +56,8 @@ class MyLogger(logging.Logger):
         :return:
         """
         f = logging.currentframe()
-        #On some versions of IronPython, currentframe() returns None if
-        #IronPython isn't run with -X:Frames.
+        # On some versions of IronPython, currentframe() returns None if
+        # IronPython isn't run with -X:Frames.
         if f is not None:
             f = f.f_back
         rv = "(unknown file)", 0, "(unknown function)", None
@@ -81,6 +82,5 @@ class MyLogger(logging.Logger):
 
 
 if __name__ == '__main__':
-    mylogger = MyLogger(__name__,logging.INFO)
+    mylogger = MyLogger(__name__, logging.INFO)
     mylogger.info(f"test mylogger func")
-    mylogger.get_cur_info()

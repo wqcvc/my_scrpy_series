@@ -11,26 +11,30 @@ from lib_scrpy import libScrpy
 from lib_logger import MyLogger
 import datetime
 import re
-import requests
-import time
 import logging
+import json
 
 
 class libFund(MyLogger):
     _current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
 
     def __init__(self, fund_code_list: list = None,level=logging.INFO):
+        """
+        @param fund_code_list: 手动传入列表，否则使用配置文件中的列表
+        @param level:日志级别
+        """
         super().__init__(__name__,level)
         self.res = libScrpy(level)
         if fund_code_list:
             self.fund_list = fund_code_list
-        else:#读取配置文件 基金列表
+        else:  # 读取配置文件的基金列表
             self.fund_list = 0
 
     def current_jjjz(self, list_a: list = None):
         """
         基金实时涨跌幅 数据统一获取入口
-        :return:
+        @param list_a: 基金代码列表
+        @return:
         """
         if not list_a:
             list_a = self.fund_list
@@ -52,7 +56,12 @@ class libFund(MyLogger):
         根据基金持有份额 估算当前涨跌幅下的当日收益
         :return:
         """
-        pass
+        # json.loads()
+        listA=json.load(open('fund_list.json','r'))
+        self.logger.info(f"listA is : {listA,type(listA)}")
+        self.logger.info(f"listA is : {listA['1']['code']}")
+        for k,v in listA.items():
+            print(k,v,v['code'],v['cost'])
 
     def fund_rate_estimate(self):
         """
@@ -134,3 +143,4 @@ if __name__ == "__main__":
     fund_code_list = ['512000','270002'] #,'000478','110035','001210','008488','001938','002621']
     ff = libFund(fund_code_list,level=logging.INFO)
     ff.current_jjjz()
+    ff.fund_income_estimate()
