@@ -469,7 +469,7 @@ class My91DownLoad():
 
 
         logger.info(f"共请求{len(listB)}个,成功请求[{len(video_lists)}]个...")
-        with open(self.log_dir + '/' + self._current_day + '_video_lists.log', "w") as f:
+        with open(self.log_dir + '/' + self._current_day + '_video_lists.log', "w",encoding='utf-8') as f:
             f.write(self._current_time + ':\n')
             for v in range(len(video_lists)):
                 f.write(title_lists[v] + "\n" + video_lists[v] + "\n")
