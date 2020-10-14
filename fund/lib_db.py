@@ -7,12 +7,18 @@
 
 import pymysql
 
+#wait to learn
+from urllib.parse import quote_plus
+from sqlalchemy import event, exc, select, orm, create_engine
+from jsonrpc_requests.jsonrpc import Method
+from werkzeug.local import LocalStack
+
 
 class libDB():
     def __init__(self):
         self.db = pymysql.Connect(host='127.0.0.1', user="root", password="km9m77wq123", port=3306, database="scrpy")
         self.cursor = self.db.cursor()
-
+        # assert sql_method in ['select', 'update', 'insert', 'delete'], '不支持的强化版SQL方法: {}'.format(method_name)
     def create_table(self,sql:str):
         pass
 
