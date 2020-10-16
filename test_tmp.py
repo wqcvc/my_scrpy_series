@@ -317,13 +317,13 @@ async def main():
 
     print(f"total run seconds: [{end - start}]")
     return url_re,tittle,img_url
-
-s1,s2,s3=asyncio.get_event_loop().run_until_complete(main())
-print(f"ssss is :{s1,s2,s3}")
-from fake_useragent import  UserAgent
-
-ua=UserAgent()
-print(f"\"--user-agent={ua.random}\"")
+#
+# s1,s2,s3=asyncio.get_event_loop().run_until_complete(main())
+# print(f"ssss is :{s1,s2,s3}")
+# from fake_useragent import  UserAgent
+#
+# ua=UserAgent()
+# print(f"\"--user-agent={ua.random}\"")
 
 import  re
 str="""https://img2.t6k.co/thumb/399042.jpg" preload="auto" class="video-js vjs-sublime-skin vjs-16-9 vjs-paused player_one-dimensions vjs-workinghover vjs-v7 vjs-user-active vjs-error vjs-controls-disabled" id="player_one" tabindex="-1" lang="en-us" role="region" aria-label="Video Player" style="visibility: visible;"><video id="player_one_html5_api" class="vjs-tech" preload="auto" poster="https://img2.t6k.co/thumb/399042.jpg" data-setup="{}" tabindex="-1" src="https://cfdc.91p52.com//mp43/399042.mp4?st=c812BSP58uMPGq0pIm4PRw&amp;f=4f77LAv/WNUGF2Obxoo0zbqWt/T6KB/x7ysBtve3eAFw+7QvChJmHOZRspwxmM5sxTy4QWfWrDqVaF/4rioVajoE/qH/wF/vrZPQ2w"""
@@ -334,3 +334,13 @@ tittle = re.findall(r'poster="(.*?)"', str3)
 # tittle = re.findall("http.?://.*.91p.*.com/.?mp43/.*.mp4", str)
 
 print(tittle)
+
+dict2222={'2020-10-15':['1.234','2.3333'],'2020-10-14':['3.455','6.789']}
+
+for k,v in dict2222.items():
+    print(k,v[0],v[1])
+
+url='xxx ddd vvv'
+
+r_url_1=url.replace('xxx','sss').replace('ddd','fff').replace('vvv','lll')
+print(r_url_1)

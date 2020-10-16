@@ -20,7 +20,8 @@ import logging
 class libScrpy(MyLogger):
     _data_source_url = 'http://fund.eastmoney.com/xxx.html'
     _current_jjjz_url='http://fundgz.1234567.com.cn/js/xxx.js'
-    _history_jjjz_url='http://fundf10.eastmoney.com/jjjz_xxx.html'
+    _history_jjjz_url='http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code=xxx&per=ddd&page=ppp'
+    _quote_hold_url='http://fundf10.eastmoney.com/ccmx_xxx.html'
     # http: // fundf10.eastmoney.com / jjjz_270002.html
     _current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
@@ -28,25 +29,28 @@ class libScrpy(MyLogger):
         super().__init__(__name__,level=level)
         # self.logger=MyLogger("libScrpy")
 
-    def __url_combine(self, flag, code):
+    def __url_combine(self, flag, code, **kwargs):
         """
         生成对应需要的url
         :param flag: 对应url的类型 1:_data_source_url基金主页 2:_current_jjjz_url实时净值 3:_history_jjjz_url历史净值
         :param code: 基金代码
         :return:
         """
-        if flag == 1:
+        if flag == 1:  # 天天基金主页
             fund_url = self._data_source_url.replace('xxx', code)
-        elif flag == 2:
+        elif flag == 2:  # 实时涨跌幅url
             fund_url = self._current_jjjz_url.replace('xxx', code)
-        elif flag == 3:
-            fund_url = self._history_jjjz_url.replace('xxx', code)
+        elif flag == 3:  # 历史净值rul
+            if kwargs['day']:
+                fund_url = self._history_jjjz_url.replace('xxx', code).replace('ddd',  str(kwargs['day'])).replace('ppp', str(kwargs['page']))
+        elif flag == 4:  # 基金股票持仓url
+            fund_url=self._quote_hold_url.replace('xxx',code)
         else:
             self.logger.info("Unknown flag number,not Url.")
         self.logger.debug(f"__url_combine url:{fund_url}")
         return fund_url
 
-    def single_request(self, code: str, flag: int = 1, method: int = 0):
+    def single_request(self, code: str, flag: int = 1, method: int = 0,**kwargs):
         """
         单个请求
         :param code:fund代码
@@ -55,7 +59,7 @@ class libScrpy(MyLogger):
         :param url:单个url
         :return:
         """
-        url = self.__url_combine(flag,code)
+        url = self.__url_combine(flag,code,**kwargs)
         assert url, "url为空"
         self.logger.info(f"request url:[{url}])")
         if method == 0:  # request请求
