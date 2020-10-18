@@ -25,7 +25,7 @@ class libFund(MyLogger):
         @param level:日志级别
         """
         super().__init__(__name__, level)
-        self.scrpy = libScrpy(level=logging.WARNING)
+        self.scrpy = libScrpy(level=logging.INFO)
         self.fund_list = []
         if fund_code_list:
             self.fund_list = fund_code_list
@@ -165,10 +165,10 @@ class libFund(MyLogger):
         :return:
         """
         assert code, "基金代码必传"
-        content = self.scrpy.single_request(code=code,flag=4)
+        content = self.scrpy.single_request(code=code,method=1,flag=4)
         quote_info = self.__re_quote_hold(content)
         code_name = self.__code_to_name(code)
-        self.logger.info(code,code_name)
+        # self.logger.info(code,code_name)
         self.logger.info(quote_info)
         return quote_info
 
@@ -240,17 +240,35 @@ class libFund(MyLogger):
         if resp:
             return resp
 
-    def __re_quote_hold(self,content):
+    def __re_quote_hold(self, content):
         """
         使用xpath匹配基金的股票持仓,市值,涨跌幅等信息
         :param content: 网页内容，需要解析的
         :return:
         """
-        html = etree.parse(content, etree.HTMLParser())
-        result = html.xpath('//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[3]/a')  # //li选择所有的li节点，/a选择li节点下的直接子节点a
-        for item in result:
-            print(item)
-        return result
+        html=etree.HTML(content)
+        self.logger.info(1)
+        with open("tmp.txt",'w') as f:
+            f.write(content)
+        #html = etree.parse(content, etree.HTMLParser()) #文件
+
+        xpath_rules={
+            1:'//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[1]',  # 序号
+            2:'//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[2]/a/text()',  # 股票代码
+            3:'//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[3]/a/text()',  # 股票名称
+            4:'//*[@id="dq600030"]',  # 最新价
+            5:'//*[@id="zd600030"]',  # 涨跌幅
+            6:'//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[7]',  # 持仓占比
+            7:'//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[8]',  # 持仓股数万
+            8:'//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[9]'  # 持仓市值
+        }
+
+        result1 = html.xpath('//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[1]') # @herf : 链接
+        result2 = html.xpath(xpath_rules[2].replace('tr[1]','tr[2]')) # @herf : 链接
+        result3 = html.xpath('//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[3]/a/text()') # @herf : 链接
+        # for item in result:
+        self.logger.info(f"result item:[{result2}]")
+        return result2
 
     def match_rule_bs4(self):
         """
@@ -274,10 +292,10 @@ class libFund(MyLogger):
         """
         pass
 
-    def data_show(self, type: str):
+    def data_show(self, show_type: str):
         """
         数据展示 eg:第三方库
-        :param type: to do
+        :param show_type: to do
         :return:
         """
         pass
