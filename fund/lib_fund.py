@@ -25,7 +25,7 @@ class libFund(MyLogger):
         @param level:日志级别
         """
         super().__init__(__name__, level)
-        self.scrpy = libScrpy(level=logging.INFO)
+        self.scrpy = libScrpy(level=logging.WARNING)
         self.fund_list = []
         if fund_code_list:
             self.fund_list = fund_code_list
@@ -85,7 +85,7 @@ class libFund(MyLogger):
 
         incomes = []
         for i in range(len(self.name)):
-            incomes.append(float(self.jjjz[i]) * numbers[i])
+            incomes.append(float(self.jjjz[i]) * numbers[i]/100)
             self.logger.info(f"[{self.name[i]}]:涨跌幅[{self.jjjz[i]}]:估算收益[{incomes[i]:.2f}]")
 
         return incomes
@@ -166,11 +166,11 @@ class libFund(MyLogger):
         """
         assert code, "基金代码必传"
         content = self.scrpy.single_request(code=code,method=1,flag=4)
-        quote_info = self.__re_quote_hold(content)
-        code_name = self.__code_to_name(code)
-        # self.logger.info(code,code_name)
-        self.logger.info(quote_info)
-        return quote_info
+        quote_info_list = self.__re_quote_hold(content)
+        # code_name = self.__code_to_name(code)
+        # self.logger.info(f"code and code_name is: {code,code_name}")
+        # self.logger.info(quote_info)
+        return quote_info_list
 
     def __code_to_name(self,code: str):
         """
@@ -178,7 +178,16 @@ class libFund(MyLogger):
         :param code:
         :return:
         """
-        code_name=code+"xxx"
+        resp = self.fund_all_funds()
+        # self.logger.info(resp)
+        re_rule={
+            1:"[\"860028\",\".*\",\"（.+）\",.*]",
+            2:"\"512000\",(.40?)"
+        }
+        # re_res = re.findall(re_rule[1].replace('860028',code), str(resp))
+        re_res = re.findall(re_rule[2], resp)
+        # self.logger.info(f"re_res is : {re_res}")
+        code_name = re_res[0]
         return code_name
 
     def __name_to_code(self,name: str):
@@ -195,7 +204,9 @@ class libFund(MyLogger):
         数据来源:http://fund.eastmoney.com/js/fundcode_search.js
         :return:
         """
-        pass
+        url = 'http://fund.eastmoney.com/js/fundcode_search.js'
+        resp = self.scrpy.request_method(url)
+        return resp
 
     def __re_current_jjjz(self, content):
         """
@@ -247,28 +258,40 @@ class libFund(MyLogger):
         :return:
         """
         html=etree.HTML(content)
-        self.logger.info(1)
         with open("tmp.txt",'w') as f:
             f.write(content)
-        #html = etree.parse(content, etree.HTMLParser()) #文件
 
+        #html = etree.parse(content, etree.HTMLParser()) #文件
         xpath_rules={
-            1:'//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[1]',  # 序号
+            1:'//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[1]/text()',  # 序号
             2:'//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[2]/a/text()',  # 股票代码
             3:'//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[3]/a/text()',  # 股票名称
-            4:'//*[@id="dq600030"]',  # 最新价
-            5:'//*[@id="zd600030"]',  # 涨跌幅
-            6:'//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[7]',  # 持仓占比
-            7:'//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[8]',  # 持仓股数万
-            8:'//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[9]'  # 持仓市值
+            4:'//*[@id="dq600030"]/text()',  # 最新价 //*[@id="dq600030"]
+            5:'//*[@id="zd600030"]/text()',  # 涨跌幅
+            6:'//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[7]/text()',  # 持仓占比
+            7:'//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[8]/text()',  # 持仓股数万
+            8:'//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[9]/text()'  # 持仓市值
         }
 
-        result1 = html.xpath('//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[1]') # @herf : 链接
-        result2 = html.xpath(xpath_rules[2].replace('tr[1]','tr[2]')) # @herf : 链接
-        result3 = html.xpath('//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[3]/a/text()') # @herf : 链接
-        # for item in result:
-        self.logger.info(f"result item:[{result2}]")
-        return result2
+        # @herf : 链接 text() 文本
+        listA=[]
+        for k in range(10):
+            listB=[]
+            for i in range(8):
+                if i+1 == 4 :
+                    res = html.xpath(xpath_rules[i+1].replace('dq600030',f"dq{listB[1]}"))
+                elif  i+1 == 5:
+                    res = html.xpath(xpath_rules[i+1].replace('zd600030',f"zd{listB[1]}"))
+                else:
+                    res = html.xpath(xpath_rules[i+1].replace('tr[1]',f"tr[{k+1}]"))
+                # self.logger.info(f"type(res) res res[0] is: {type(res),res,res[0]}")
+                listB.append(res[0])
+            # self.logger.info(f"第[{k+1}]个 current listB result: {listB}")
+            listA.append(listB)
+        for i in range(len(listA)):
+            self.logger.info(f"listA[{i}] is:{listA[i]}")
+
+        return listA
 
     def match_rule_bs4(self):
         """
@@ -315,4 +338,4 @@ if __name__ == "__main__":
     # 获取单个基金的历史几天的 单位净值 历史净值 日收益率
     ff.fund_history_jjjz('512000', 1)
     # 获取单个基金的股票持仓情况及股票实时的涨跌幅
-    ff.fund_hold_shares('512000')
+    ff.fund_hold_shares('270002')
