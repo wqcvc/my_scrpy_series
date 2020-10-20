@@ -14,6 +14,7 @@ import re
 import logging
 import json
 from lxml import etree
+import csv
 
 
 class libFund(MyLogger):
@@ -75,7 +76,7 @@ class libFund(MyLogger):
     def fund_income_estimate(self):
         """
         根据基金持有份额num 估算当前涨跌幅下的当日收益
-        :return:
+        :return: 当日收益列表
         """
         dict1 = self.__json_to_dict()
 
@@ -93,7 +94,7 @@ class libFund(MyLogger):
     def fund_rate_estimate(self):
         """
         根据cost成本估算当前净值下的持有历史总收益率
-        :return:
+        :return: 收益率列表
         """
         dict1 = self.__json_to_dict()
 
@@ -112,7 +113,7 @@ class libFund(MyLogger):
     def fund_hold_amount_income(self):
         """
         估算当前净值下的持有总金额及总收益金额
-        :return:
+        :return: 持有总金额和总收益金额的列表
         """
         dict1 = self.__json_to_dict()
 
@@ -139,7 +140,7 @@ class libFund(MyLogger):
         数据来源url: 单页超过49个无效：http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code=512000&per=49&page=2
         :param code:int 要查询的单个基金代码
         :param day:展示天数
-        :return:
+        :return: 历史day天的净值 日增长率等信息等列表
         """
         assert code, "基金代码必传"
         page = day // 49 + 1  # 要请求的页数
@@ -156,18 +157,25 @@ class libFund(MyLogger):
         self.logger.info(f"净值日期	单位净值	累计净值	日增长率")
         for i in range(len(hisjz_list)):
             self.logger.info(hisjz_list[i])
+        #day天的总收益率
+        rates_in_day=0
+        for i in  range(len(hisjz_list)):
+            rates_in_day += float(hisjz_list[i][3])
+        self.logger.info(f"\n该基金最近 [{day}] 天总收益率为:[ {rates_in_day:.2f} ]\n")
+
         return hisjz_list
 
     def fund_hold_shares(self,code: str):
         """
         单个基金持仓股票及其实时涨跌幅
         数据来源url:http://fundf10.eastmoney.com/ccmx_512000.html
-        :return:
+        :return: 基金的前10持仓股票的基本信息列表
         """
         assert code, "基金代码必传"
         content = self.scrpy.single_request(code=code,method=1,flag=4)
         quote_info_list = self.__re_quote_hold(content)
-        # code_name = self.__code_to_name(code)
+        code_name = self.__code_to_name(code)
+        # code = self.__name_to_code(name='国投瑞银新兴产业混合')
         # self.logger.info(f"code and code_name is: {code,code_name}")
         # self.logger.info(quote_info)
         return quote_info_list
@@ -179,24 +187,15 @@ class libFund(MyLogger):
         :return:
         """
         resp = self.fund_all_funds()
-        # self.logger.info(resp)
-        re_rule={
-            1:"[\"860028\",\".*\",\"（.+）\",.*]",
-            2:"\"512000\",(.40?)"
-        }
-        # re_res = re.findall(re_rule[1].replace('860028',code), str(resp))
-        re_res = re.findall(re_rule[2], resp)
-        # self.logger.info(f"re_res is : {re_res}")
-        code_name = re_res[0]
-        return code_name
 
-    def __name_to_code(self,name: str):
-        """
-        根据name获得基金code
-        :param name:
-        :return:
-        """
-        pass
+        re_rule={
+            1:"\"xxxxxx\",\".*?\",\"(.*?)\",",
+        }
+        re_res = re.findall(re_rule[1].replace('xxxxxx',code), str(resp))
+        # self.logger.info(f"re_res is : {re_res[0]}")
+        if re_res[0]:
+            code_name = re_res[0]
+        return code_name
 
     def fund_all_funds(self):
         """
@@ -310,7 +309,7 @@ class libFund(MyLogger):
     def data_storage(self, method: int = 0):
         """
         数据存储:
-        :param method:0-mysql 1 - sqlalchemy
+        :param method:0-mysql 1 - sqlalchemy 2 - csv
         :return:
         """
         pass
