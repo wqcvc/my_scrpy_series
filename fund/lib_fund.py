@@ -34,6 +34,7 @@ class libFund(MyLogger):
             dict = self.__json_to_dict()
             for k, v in dict.items():
                 self.fund_list.append(v['code'])
+        #名称 基金净值 基金
         self.name, self.jjjz, self.gsz = self.fund_current_jjjz()
 
     def __json_to_dict(self, json_name: str = "fund_list.json"):
@@ -117,20 +118,31 @@ class libFund(MyLogger):
         """
         dict1 = self.__json_to_dict()
 
+        codes = []
         costs = []
         numbers = []
         for k, v in dict1.items():
+            codes.append(v['code'])
             costs.append(v['cost'])
             numbers.append(v['num'])
 
         total_amount = []
         income_amount = []
+        curr_amount = []
         for i in range(len(self.name)):
-            amount = (float(self.gsz[i])) * numbers[i]
-            income = (float(self.gsz[i]) / costs[i] - 1) * numbers[i]
-            total_amount.append(amount)
-            income_amount.append(income)
-            self.logger.info(f"[{self.name[i]}]:持有收益[{income_amount[i]:.2f}]:持有总金额[{total_amount[i]:.2f}]")
+            # 持有总金额 = 份额 * 前一日净值
+            pre_jjjz = self.fund_history_jjjz(codes[i], 1)
+            t_amount = float(pre_jjjz[0][1]) * numbers[i]
+            # 持有总收益 = 持有总金额 - 份额 * 成本价(cost)
+            t_income = t_amount - (costs[i] * numbers[i])
+            # 当日收益估算 = 当日涨跌幅 * 持有总金额
+            curr_income = float(self.jjjz[i]) * t_amount / 100
+
+            total_amount.append(t_amount)
+            income_amount.append(t_income)
+            curr_amount.append(curr_income)
+
+            self.logger.info(f"[{self.name[i]}]:当日收益估算[{curr_amount[i]:.2f}]:持有总收益[{income_amount[i]:.2f}]:持有总金额[{total_amount[i]:.2f}]")
 
         return total_amount, income_amount
 
@@ -144,7 +156,6 @@ class libFund(MyLogger):
         """
         assert code, "基金代码必传"
         page = day // 49 + 1  # 要请求的页数
-        self.logger.info(f"page is :{page}")
         hisjz_list = []
         for p in range(page):
             content = self.scrpy.single_request(code=code, flag=3, day=49, page=p+1)  # day=49固定,分页最大49
@@ -153,15 +164,15 @@ class libFund(MyLogger):
             for i in range(len(jz_data)):
                 hisjz_list.append(jz_data[i])
         hisjz_list=hisjz_list[:day]
-        self.logger.info(len(hisjz_list))
-        self.logger.info(f"净值日期	单位净值	累计净值	日增长率")
-        for i in range(len(hisjz_list)):
-            self.logger.info(hisjz_list[i])
+        # self.logger.info(len(hisjz_list))
+        # self.logger.info(f"净值日期	单位净值	累计净值	日增长率")
+        # for i in range(len(hisjz_list)):
+        #     self.logger.info(hisjz_list[i])
         #day天的总收益率
         rates_in_day=0
         for i in  range(len(hisjz_list)):
             rates_in_day += float(hisjz_list[i][3])
-        self.logger.info(f"\n该基金最近 [{day}] 天总收益率为:[ {rates_in_day:.2f} ]\n")
+        # self.logger.info(f"\n该基金最近 [{day}] 天总收益率为:[ {rates_in_day:.2f} ]\n")
 
         return hisjz_list
 
