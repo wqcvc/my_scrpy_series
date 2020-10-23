@@ -74,24 +74,6 @@ class libFund(MyLogger):
 
         return name, jjjz, gsz
 
-    def fund_income_estimate(self):
-        """
-        根据基金持有份额num 估算当前涨跌幅下的当日收益
-        :return: 当日收益列表
-        """
-        dict1 = self.__json_to_dict()
-
-        numbers = []
-        for k, v in dict1.items():
-            numbers.append(v['num'])
-
-        incomes = []
-        for i in range(len(self.name)):
-            incomes.append(float(self.jjjz[i]) * numbers[i]/100)
-            self.logger.info(f"[{self.name[i]}]:涨跌幅[{self.jjjz[i]}]:估算收益[{incomes[i]:.2f}]")
-
-        return incomes
-
     def fund_rate_estimate(self):
         """
         根据cost成本估算当前净值下的持有历史总收益率
@@ -268,9 +250,6 @@ class libFund(MyLogger):
         :return:
         """
         html=etree.HTML(content)
-        with open("tmp.txt",'w') as f:
-            f.write(content)
-
         #html = etree.parse(content, etree.HTMLParser()) #文件
         xpath_rules={
             1:'//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[1]/text()',  # 序号
@@ -339,11 +318,9 @@ if __name__ == "__main__":
     ff = libFund(level=logging.INFO)
     # 获取基金列表的实时涨跌幅
     # ff.fund_current_jjjz()
-    # 获取基金列表的实时估算收益
-    ff.fund_income_estimate()
     # 获取基金列表的持有收益率
     ff.fund_rate_estimate()
-    # 获取基金列表的持有总金额和持有收益金额
+    # 获取基金列表的持有总金额和持有收益金额,实时估算收益
     ff.fund_hold_amount_income()
     # 获取单个基金的历史几天的 单位净值 历史净值 日收益率
     ff.fund_history_jjjz('512000', 1)
