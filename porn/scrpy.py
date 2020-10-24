@@ -24,6 +24,7 @@ import asyncio
 from pyppeteer import launch
 from lib_logger import MyLogger
 import csv
+from lxml import etree
 
 config = ConfigParser()
 config.read("urls_rules.ini")
@@ -308,7 +309,7 @@ class My91DownLoad(MyLogger):
                         down_progress.update(dl)
                     down_progress.finish()
                 self.logger.info(f"下载成功...\n")
-            time.sleep(5)
+            time.sleep(3)
         self.logger.info(f"[wonderful!!!]所有下载任务请求完成,请检查...")
 
     def proxy_set(self):
@@ -412,7 +413,7 @@ class My91DownLoad(MyLogger):
                 video_f = min((word for word in video_ori if word), key=len)
             else:
                 video_f = video_ori[0]
-            self.logger.info(f"\n最终选择的video_f是:{video_f}\n")
+            self.logger.info(f"\n获取到的video_url是:{video_f}\n")
 
         await browser.close()  # 关闭
         end = time.time()
@@ -426,11 +427,9 @@ class My91DownLoad(MyLogger):
         :param listB: 存储子详情页urls链接的列表
         :return:返回存储了video title img的lists
         """
-        self.logger.info(f"fetch_video_urls_new:开始逐个请求subpage url去获取video url")
+        self.logger.info(f"fetch_video_urls_new:开始逐个请求subpage url去获取video url...\n")
         #保存video url到 csv文件
-        save_file_name = self.log_dir + '/' + self._current_day + '_video_lists.log'
-        # with open(save_file_name, "a+", encoding='utf-8') as f:
-        #     f.write(self._current_time + ':\n')
+        save_file_name = self.log_dir + '/' + self._current_day + '_video_lists.csv'
         with open(save_file_name,'a+',encoding='utf-8-sig') as f:
             writer = csv.writer(f,dialect='excel')
             writer.writerow(['标题title','视频链接video_url'])
@@ -438,8 +437,7 @@ class My91DownLoad(MyLogger):
         title_lists = []
         for i in range(len(listB)):
             try:
-                self.logger.info(f"\n")
-                self.logger.info(f"第[{i + 1}]个subpage:url:[{listB[i]}]")
+                self.logger.info(f"第[{i + 1}]个subpage_url:[{listB[i]}]")
                 ua = UserAgent()  # ua.random
                 headers = {
                     'Accept-Language': 'zh-CN,zh;q=0.9',
@@ -458,10 +456,14 @@ class My91DownLoad(MyLogger):
                 else:
                     pass
                 # fetch title
-                tittle = re.findall(r'<h4 class="login_register_header" align=left>(.*?)</h4>', res2.text, re.S)
-                temp_t = tittle[0].replace('\n', '')
+                # tittle = re.findall(r'<h4 class="login_register_header" align=left>(.*?)</h4>', res2.text, re.S)
+                # temp_t = tittle[0].replace('\n', '')
+                # tittle_f = temp_t.replace(' ', '')
+                html = etree.HTML(res2.text)
+                tittle_tmp = html.xpath('//*[@id="videodetails"]/h4/text()')
+                temp_t = tittle_tmp[0].replace('\n', '')
                 tittle_f = temp_t.replace(' ', '')
-                self.logger.info(f"获取到的标题tiltle is:[{tittle_f}]\n")
+                self.logger.info(f"获取到的tiltle是:[{tittle_f}]")
                 video_f = asyncio.get_event_loop().run_until_complete(self.__pyppeteeer_newget(subpage_url=listB[i]))
 
                 if not (video_f or tittle_f):  # or img_f:
@@ -472,11 +474,11 @@ class My91DownLoad(MyLogger):
                     title_lists.append(tittle_f)
 
                     with open(save_file_name, "a+", encoding='utf-8-sig') as f:
-                        tmp_list = [];tmp_list.append(tittle_f);tmp_list.append(video_f)
+                        tmp_list = [tittle_f, video_f];
                         # f.write(tittle_f + "\n" + video_f + "\n")
                         writer = csv.writer(f,dialect='excel')
                         writer.writerow(tmp_list)
-                    self.logger.info(f"已保存title+video信息到文件...")
+                    self.logger.info(f"已保存title+video信息到文件到当日csv...")
 
             except TypeError as error_info:
                 self.logger.info(f"捕获异常-error_info:[{error_info}],将跳过此次请求 ")
@@ -534,6 +536,6 @@ class My91DownLoad(MyLogger):
 
 if __name__ == '__main__':
     f = My91DownLoad()
-    # 最大number=25 [作为游客，你每天只可观看25个视频]
-    f.start_by_number(number=2)
+    # 最大number=25,单页24个 [作为游客，你每天只可观看25个视频]
+    f.start_by_number(number=24)
     # f.start_by_page(page=1)
