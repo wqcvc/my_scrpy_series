@@ -19,6 +19,7 @@ import csv
 
 class libFund(MyLogger):
     _current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+    _current_day = datetime.datetime.now().strftime('%Y%m%d')
 
     def __init__(self, fund_code_list: list = None, level=logging.INFO):
         """
@@ -296,10 +297,42 @@ class libFund(MyLogger):
         """
         pass
 
-    def data_storage(self, method: int = 0):
+    def csv_save(self, listA: list, title: list = _current_day, csv_name: str = _current_day):
         """
-        数据存储:
-        :param method:0-mysql 1 - sqlalchemy 2 - csv
+        数据存储进csv文件:
+        :param title:
+        :param listA:
+        :param csv_name:
+        :return:
+        """
+        self.logger.info(f"csv_file:{csv_name} listA:{listA}")
+        with open(csv_name,'w',encoding='utf-8-sig') as f:
+            writer = csv.writer(f,dialect='excel')
+            writer.writerow(title)
+            for row in listA:
+                writer.writerow(row)
+                # writer.writerows(row)
+        self.logger.info(f"save csv:[{csv_name}] finish...")
+
+    def csv_read(self, csv_name: str):
+        """
+        从csv文件读取数据存储为list
+        :param csv_name:
+        :return:
+        """
+        listA=[]
+        return listA
+
+    def db_save(self):
+        """
+        保存到DB数据库
+        :return:
+        """
+        pass
+
+    def db_read(self):
+        """
+        从DB读取数据
         :return:
         """
         pass
@@ -311,7 +344,6 @@ class libFund(MyLogger):
         :return:
         """
         pass
-
 
 if __name__ == "__main__":
     fund_code_list = ['512000', '270002']  # ,'000478','110035','001210','008488','001938','002621']
