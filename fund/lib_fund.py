@@ -102,7 +102,7 @@ class libFund(MyLogger):
         :param json_name: 默认json文件名
         :return:
         """
-        dict = json.load(open(json_name, 'r'))
+        dict = json.load(open(json_name, 'r',encoding='utf-8'))
         if dict:
             return dict
         else:
