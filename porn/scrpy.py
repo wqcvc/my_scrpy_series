@@ -430,7 +430,7 @@ class My91DownLoad(MyLogger):
         self.logger.info(f"fetch_video_urls_new:开始逐个请求subpage url去获取video url...\n")
         #保存video url到 csv文件
         save_file_name = self.log_dir + '/' + self._current_day + '_video_lists.csv'
-        with open(save_file_name,'a+',encoding='utf-8-sig') as f:
+        with open(save_file_name,'a+',encoding='utf-8-sig',newline='') as f:
             writer = csv.writer(f,dialect='excel')
             writer.writerow(['标题title','视频链接video_url'])
         video_lists = []

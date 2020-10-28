@@ -85,6 +85,7 @@ class libScrpy(MyLogger):
     def request_method(self, url):
         """
         使用request库
+        :return:
         :param url:
         :return:
         """
@@ -122,7 +123,10 @@ class libScrpy(MyLogger):
                 "--no-sandbox",  # --no-sandbox 在 docker 里使用时需要加入的参数，不然会报错
                 "--disable-infobars",
                 "--ignore-certificate-errors",
-                "--log-level=3",
+                "--log-level=1",
+                "--disable-gpu",
+                "--disable-dev-shm-usage",
+                "--disable-software-rasterizer",
                 "--enable-extensions",
                 "--window-size=1920,1080",
                 "--refer=http://fund.eastmoney.com",
