@@ -93,8 +93,18 @@ class libFund(MyLogger):
             dict = self.__json_to_dict()
             for k, v in dict.items():
                 self.fund_list.append(v['code'])
-        # 名称 基金净值 基金
-        self.name, self.jjjz, self.gsz, self.dwjz= self.fund_current_jjjz()
+        # 基金名称 基金涨跌幅 估算净值 前日净值
+        list_tmp=self.fund_current_jjjz()
+        self.name = []
+        self.gszzl = []
+        self.gsz = []
+        self.dwjz = []
+        for i in range(len(self.fund_list)):
+            self.name.append(list_tmp[i][0])
+            self.gszzl.append(list_tmp[i][1])
+            self.gsz.append(list_tmp[i][2])
+            self.dwjz.append(list_tmp[i][3])
+
 
     def __json_to_dict(self, json_name: str = "fund_list.json"):
         """
@@ -116,24 +126,19 @@ class libFund(MyLogger):
         """
         if not list_a:
             list_a = self.fund_list
-        jjjz = []
-        name = []
-        gsz = []
-        dwjz = []
+
+        total_data = []
         for i in range(len(list_a)):
             self.logger.info(f"request fund_code:[{list_a[i]}]")
             text = self.scrpy.single_request(list_a[i], flag=2, method=0)
             data_dict = self.__re_current_jjjz(content=text)
-            name.append(data_dict['name'])
-            jjjz.append(data_dict['gszzl'])
-            gsz.append(data_dict['gsz'])
-            dwjz.append(data_dict['dwjz'])
+            total_data.append([data_dict['name'],data_dict['gszzl'],data_dict['gsz'],data_dict['dwjz']])
 
         # 展示基金名字+实时估算净值
-        for i in range(len(name)):
-            self.logger.info(f"[{name[i]}]:涨跌幅[{jjjz[i]}]")
+        for i in range(len(total_data)):
+            self.logger.info(f"[{total_data[i][0]}]:涨跌幅[{total_data[i][1]}]")
 
-        return name, jjjz, gsz, dwjz
+        return total_data
 
     def fund_rate_estimate(self):
         """
@@ -154,6 +159,7 @@ class libFund(MyLogger):
 
         return rates
 
+    @property
     def fund_hold_amount_income(self):
         """
         估算当前净值下的持有总金额及总收益金额
@@ -179,7 +185,7 @@ class libFund(MyLogger):
             # 持有总收益 = 持有总金额 - 份额 * 成本价(cost)
             t_income = t_amount - (costs[i] * numbers[i])
             # 当日收益估算 = 当日涨跌幅 * 持有总金额
-            curr_income = float(self.jjjz[i]) * t_amount / 100
+            curr_income = float(self.gszzl[i]) * t_amount / 100
 
             total_amount.append(t_amount)
             income_amount.append(t_income)
@@ -188,7 +194,11 @@ class libFund(MyLogger):
             self.logger.info(
                 f"[{self.name[i]}]:当日收益估算[{curr_amount[i]:.2f}]:持有总收益[{income_amount[i]:.2f}]:持有总金额[{total_amount[i]:.2f}]")
 
-        return curr_amount, income_amount, total_amount
+        all_income = []
+        for i in range(len(self.name)):
+            all_income.append([self.name[i], codes[i], curr_amount[i], income_amount[i], total_amount[i]])
+
+        return all_income
 
     def fund_history_jjjz(self, code: str, day: int = 3):
         """
@@ -412,7 +422,7 @@ if __name__ == "__main__":
     # 获取基金列表的持有收益率
     ff.fund_rate_estimate()
     # 获取基金列表的持有总金额和持有收益金额,实时估算收益
-    ff.fund_hold_amount_income()
+    ff.fund_hold_amount_income
     # 获取单个基金的历史几天的 单位净值 历史净值 日收益率
     ff.fund_history_jjjz('512000', 1)
     # 获取单个基金的股票持仓情况及股票实时的涨跌幅
