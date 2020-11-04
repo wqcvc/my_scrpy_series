@@ -16,12 +16,12 @@ csv_name2 = "持仓实时数据和收益明细.csv"
 # ff.csv_save(funds_total, title=title2, csv_name=csv_name2)
 
 # 获取单个基金的股票持仓情况及股票实时的涨跌幅
-csvfile_name = '基金前十持仓股票明细.csv'
+csv_name1 = '基金前十持仓股票明细.csv'
 quote_list = ['163406']  # #ff.fund_list
 for i in range(len(quote_list)):
     res = ff.fund_hold_shares(quote_list[i])
-    title = [f"{ff.code_to_name(quote_list[i])}({quote_list[i]})"]
-    # ff.csv_save(res, title, csvfile_name)
+    title1 = [f"{ff.code_to_name(quote_list[i])}({quote_list[i]})"]
+    # ff.csv_save(res, title1, csv_name1)
 
 # 获取单个基金的历史几天的 单位净值 历史净值 日收益率
 his_jjjz_list = ['161219']

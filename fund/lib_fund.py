@@ -340,9 +340,7 @@ class libFund(MyLogger):
                     res = html.xpath(xpath_rules[i + 1].replace('tr[1]', f"tr[{k + 1}]"))
                 listB.append(res[0])
             listA.append(listB)
-        # for i in range(len(listA)):
-        #     self.logger.info(f"listA[{i}] is:{listA[i]}")
-        self.logger.info(f"listA: {listA}")
+
         return listA
 
     def match_rule_bs4(self):
