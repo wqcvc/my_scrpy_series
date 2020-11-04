@@ -94,7 +94,7 @@ class libFund(MyLogger):
             for k, v in dict.items():
                 self.fund_list.append(v['code'])
         # 基金名称 基金涨跌幅 估算净值 前日净值
-        list_tmp=self.fund_current_jjjz()
+        list_tmp = self.fund_current_jjjz()
         self.name = []
         self.gszzl = []
         self.gsz = []
@@ -105,14 +105,13 @@ class libFund(MyLogger):
             self.gsz.append(list_tmp[i][2])
             self.dwjz.append(list_tmp[i][3])
 
-
     def __json_to_dict(self, json_name: str = "fund_list.json"):
         """
         将json的格式转换为字典,方便后续处理
         :param json_name: 默认json文件名
         :return:
         """
-        dict = json.load(open(json_name, 'r',encoding='utf-8'))
+        dict = json.load(open(json_name, 'r', encoding='utf-8'))
         if dict:
             return dict
         else:
@@ -132,11 +131,11 @@ class libFund(MyLogger):
             self.logger.info(f"request fund_code:[{list_a[i]}]")
             text = self.scrpy.single_request(list_a[i], flag=2, method=0)
             data_dict = self.__re_current_jjjz(content=text)
-            total_data.append([data_dict['name'],data_dict['gszzl'],data_dict['gsz'],data_dict['dwjz']])
+            total_data.append([data_dict['name'], data_dict['gszzl'], data_dict['gsz'], data_dict['dwjz']])
 
         # 展示基金名字+实时估算净值
-        for i in range(len(total_data)):
-            self.logger.info(f"[{total_data[i][0]}]:涨跌幅[{total_data[i][1]}]")
+        # for i in range(len(total_data)):
+        #     self.logger.info(f"[{total_data[i][0]}]  涨跌幅[{total_data[i][1]}]")
 
         return total_data
 
@@ -155,15 +154,14 @@ class libFund(MyLogger):
         for i in range(len(self.name)):
             rate = (float(self.gsz[i]) / costs[i] - 1) * 100
             rates.append(rate)
-            self.logger.info(f"[{self.name[i]}]:持有收益率[{rates[i]:.2f}%]")
 
         return rates
 
     @property
-    def fund_hold_amount_income(self):
+    def fund_hold_info(self):
         """
-        估算当前净值下的持有总金额及总收益金额
-        :return: 持有总金额和总收益金额的列表
+        估算当前净值下的持有总金额及总收益金额 + 持有收益率 + 涨跌幅
+        :return: 持有总金额和总收益金额的列表 + 持有收益率 + 涨跌幅
         """
         dict1 = self.__json_to_dict()
 
@@ -175,6 +173,7 @@ class libFund(MyLogger):
             costs.append(v['cost'])
             numbers.append(v['num'])
 
+        rates = self.fund_rate_estimate()
         total_amount = []
         income_amount = []
         curr_amount = []
@@ -192,11 +191,13 @@ class libFund(MyLogger):
             curr_amount.append(curr_income)
 
             self.logger.info(
-                f"[{self.name[i]}]:当日收益估算[{curr_amount[i]:.2f}]:持有总收益[{income_amount[i]:.2f}]:持有总金额[{total_amount[i]:.2f}]")
+                f"[{self.name[i]}]: 实时涨跌幅[{self.gszzl[i]}] 当日收益估算[{curr_amount[i]:.2f}] 持有收益率[{rates[i]:.2f}] 持有总收益[{income_amount[i]:.2f}] "
+                f"持有总金额[{total_amount[i]:.2f}]")
 
         all_income = []
         for i in range(len(self.name)):
-            all_income.append([self.name[i], codes[i], curr_amount[i], income_amount[i], total_amount[i]])
+            all_income.append(
+                [self.name[i], codes[i], self.gszzl[i], curr_amount[i], rates[i], income_amount[i], total_amount[i]])
 
         return all_income
 
@@ -244,11 +245,11 @@ class libFund(MyLogger):
         quote_info_list = self.__re_quote_hold(content)
 
         for i in range(len(quote_info_list)):
-            self.logger.info(f"[{i+1}]:{quote_info_list[i]}")
+            self.logger.info(f"[{i + 1}]:{quote_info_list[i]}")
 
         return quote_info_list
 
-    def __code_to_name(self, code: str):
+    def code_to_name(self, code: str):
         """
         根绝code得到基金名称
         :param code:
@@ -260,7 +261,6 @@ class libFund(MyLogger):
             1: "\"xxxxxx\",\".*?\",\"(.*?)\",",
         }
         re_res = re.findall(re_rule[1].replace('xxxxxx', code), str(resp))
-        # self.logger.info(f"re_res is : {re_res[0]}")
         if re_res[0]:
             code_name = re_res[0]
         return code_name
@@ -328,7 +328,7 @@ class libFund(MyLogger):
         }
 
         # @herf : 链接 text() 文本
-        listA = []
+        listA = [['序号', '代码', '名称', '股价', '涨跌幅', '占比', '万股数', '市值']]
         for k in range(10):
             listB = []
             for i in range(8):
@@ -342,7 +342,7 @@ class libFund(MyLogger):
             listA.append(listB)
         # for i in range(len(listA)):
         #     self.logger.info(f"listA[{i}] is:{listA[i]}")
-
+        self.logger.info(f"listA: {listA}")
         return listA
 
     def match_rule_bs4(self):
@@ -359,16 +359,18 @@ class libFund(MyLogger):
         """
         pass
 
-    def csv_save(self, listA: list, title: list, csv_name: str = _current_day):
+    def csv_save(self, listA: list, title: list, csv_name: str = _current_day, mode: str = 'a+'):
         """
-        数据存储进csv文件:
-        :param title:
+        数据存储进csv文件
+        :param mode: 文件读写模式
+        :rtype: object
+        :param title: 标题
         :param listA:
-        :param csv_name:
+        :param csv_name: 保存文件名
         :return:
         """
         self.logger.info(f"csv_file:{csv_name}")
-        with open(csv_name, 'w', encoding='utf-8-sig', newline='') as f:
+        with open(csv_name, mode, encoding='utf-8-sig', newline='') as f:
             writer = csv.writer(f, dialect='excel')
             writer.writerow(title)
             for row in listA:
@@ -387,7 +389,7 @@ class libFund(MyLogger):
             reader = csv.reader(f)
             # reader = csv.DictReader(f) # row['序号']
             for row in reader:
-                self.logger.info(row) # row[0]
+                self.logger.info(row)  # row[0]
                 # writer.writerows(row)
         self.logger.info(f"read csv:[{csv_name}] finish...")
 
@@ -422,7 +424,7 @@ if __name__ == "__main__":
     # 获取基金列表的持有收益率
     ff.fund_rate_estimate()
     # 获取基金列表的持有总金额和持有收益金额,实时估算收益
-    ff.fund_hold_amount_income
+    ff.fund_hold_info
     # 获取单个基金的历史几天的 单位净值 历史净值 日收益率
     ff.fund_history_jjjz('512000', 1)
     # 获取单个基金的股票持仓情况及股票实时的涨跌幅
