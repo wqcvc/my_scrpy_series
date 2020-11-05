@@ -95,10 +95,7 @@ class libFund(MyLogger):
                 self.fund_list.append(v['code'])
         # 基金名称 基金涨跌幅 估算净值 前日净值
         list_tmp = self.fund_current_jjjz()
-        self.name = []
-        self.gszzl = []
-        self.gsz = []
-        self.dwjz = []
+        self.name, self.gszzl, self.gsz, self.dwjz = [],[],[],[]
         for i in range(len(self.fund_list)):
             self.name.append(list_tmp[i][0])
             self.gszzl.append(list_tmp[i][1])
@@ -165,18 +162,15 @@ class libFund(MyLogger):
         """
         dict1 = self.__json_to_dict()
 
-        codes = []
-        costs = []
-        numbers = []
+        codes, costs, numbers= [],[],[]
         for k, v in dict1.items():
             codes.append(v['code'])
             costs.append(v['cost'])
             numbers.append(v['num'])
 
         rates = self.fund_rate_estimate()
-        total_amount = []
-        income_amount = []
-        curr_amount = []
+        total_amount, income_amount, curr_amount = [], [], []
+        xyz1, xyz2, xyz3 = 0, 0, 0
         for i in range(len(self.name)):
             # 持有总金额 = 份额 * 前一日净值 : 换一种方式
             pre_jjjz = float(self.dwjz[i])
@@ -186,18 +180,25 @@ class libFund(MyLogger):
             # 当日收益估算 = 当日涨跌幅 * 持有总金额
             curr_income = float(self.gszzl[i]) * t_amount / 100
 
-            total_amount.append(t_amount)
-            income_amount.append(t_income)
             curr_amount.append(curr_income)
+            income_amount.append(t_income)
+            total_amount.append(t_amount)
 
             self.logger.info(
-                f"[{self.name[i]}]: 实时涨跌幅[{self.gszzl[i]}] 当日收益估算[{curr_amount[i]:.2f}] 持有收益率[{rates[i]:.2f}] 持有总收益[{income_amount[i]:.2f}] "
+                f"[{self.name[i]}]: 实时涨跌幅[{self.gszzl[i]}%] 当日收益估算[{curr_amount[i]:.2f}] 持有收益率[{rates[i]:.2f}%] 持有总收益[{income_amount[i]:.2f}] "
                 f"持有总金额[{total_amount[i]:.2f}]")
+
+            xyz1 += curr_income
+            xyz2 += t_income
+            xyz3 += t_amount
+
+        self.logger.info(f"当日总收益:[{xyz1}] 持有总收益:[{xyz2}] 持有总额:[{xyz3}] ")
 
         all_income = []
         for i in range(len(self.name)):
             all_income.append(
                 [self.name[i], codes[i], self.gszzl[i], curr_amount[i], rates[i], income_amount[i], total_amount[i]])
+        all_income.append([f"当日总收益:[{xyz1}]", f"持有总收益:[{xyz2}]", f"持有总额:[{xyz3}]"])
 
         return all_income
 
