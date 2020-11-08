@@ -136,6 +136,8 @@ class libScrpy(MyLogger):
         }
         browser = await launch(**launch_args)
         page = await browser.newPage()
+        await page.evaluateOnNewDocument('() =>{ Object.defineProperties(navigator,'
+                                         '{ webdriver:{ get: () => false } }) }')
         resp = await page.goto(url=url, timeout=10000)
         self.logger.info(f"resp.status code:{resp.status}")
         if resp.status != 200:

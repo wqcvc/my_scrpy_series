@@ -273,6 +273,7 @@ from pyppeteer import launch
 import time
 import re
 
+
 async def main():
     start = time.time()
     launch_args = {
@@ -293,8 +294,9 @@ async def main():
     browser = await launch(**launch_args)
     page = await browser.newPage()
     res = await page.goto(
-        'https://0722.91p51.com/view_video.php?viewkey=ebaec4277896006083f7&page=1&viewtype=basic&category=rf',timeout=360000)  # 跳转
-        # 'https://www.baidu.com', options={'timeout': 30000})  # 跳转
+        'https://0722.91p51.com/view_video.php?viewkey=ebaec4277896006083f7&page=1&viewtype=basic&category=rf',
+        timeout=360000)  # 跳转
+    # 'https://www.baidu.com', options={'timeout': 30000})  # 跳转
     await page.screenshot({'path': 'example.png'})  # 截图
 
     res.text()
@@ -316,7 +318,9 @@ async def main():
     end = time.time()
 
     print(f"total run seconds: [{end - start}]")
-    return url_re,tittle,img_url
+    return url_re, tittle, img_url
+
+
 #
 # s1,s2,s3=asyncio.get_event_loop().run_until_complete(main())
 # print(f"ssss is :{s1,s2,s3}")
@@ -325,22 +329,27 @@ async def main():
 # ua=UserAgent()
 # print(f"\"--user-agent={ua.random}\"")
 
-import  re
-str="""https://img2.t6k.co/thumb/399042.jpg" preload="auto" class="video-js vjs-sublime-skin vjs-16-9 vjs-paused player_one-dimensions vjs-workinghover vjs-v7 vjs-user-active vjs-error vjs-controls-disabled" id="player_one" tabindex="-1" lang="en-us" role="region" aria-label="Video Player" style="visibility: visible;"><video id="player_one_html5_api" class="vjs-tech" preload="auto" poster="https://img2.t6k.co/thumb/399042.jpg" data-setup="{}" tabindex="-1" src="https://cfdc.91p52.com//mp43/399042.mp4?st=c812BSP58uMPGq0pIm4PRw&amp;f=4f77LAv/WNUGF2Obxoo0zbqWt/T6KB/x7ysBtve3eAFw+7QvChJmHOZRspwxmM5sxTy4QWfWrDqVaF/4rioVajoE/qH/wF/vrZPQ2w"""
-str2="""https://ccn.91p52.com//mp43/399037.mp4?st=WGDUdhJH_yxw0RO4kg_fxw&amp;f=5367IaGnenGddK7hp1KY3qA80lfhSkKKX6ixx6W9IHOh8R8ee8E6Y98nIGIkx5r5FWoBXoU6jNXQoNVzSnvdDGgCUaOasC0BfKdc9Q"""
-str3="""<div data-setup="{}" poster="https://img2.t6k.co/thumb/399083.jpg" preload="auto" class="video-js vjs-sublime-skin vjs-16-9 vjs-paused player_one-dimensions vjs-controls-enabled vjs-workinghover vjs-v7 vjs-user-active" id="player_one" tabindex="-1" lang="en-us" role="region" aria-label="Video Player" style="visibility: visible;"><video id="player_one_html5_api" class="vjs-tech" preload="auto" poster="https://img2.t6k.co/thumb/399083.jpg" data-setup="{}" tabindex="-1">"""
+import re
+
+str = """https://img2.t6k.co/thumb/399042.jpg" preload="auto" class="video-js vjs-sublime-skin vjs-16-9 vjs-paused player_one-dimensions vjs-workinghover vjs-v7 vjs-user-active vjs-error vjs-controls-disabled" id="player_one" tabindex="-1" lang="en-us" role="region" aria-label="Video Player" style="visibility: visible;"><video id="player_one_html5_api" class="vjs-tech" preload="auto" poster="https://img2.t6k.co/thumb/399042.jpg" data-setup="{}" tabindex="-1" src="https://cfdc.91p52.com//mp43/399042.mp4?st=c812BSP58uMPGq0pIm4PRw&amp;f=4f77LAv/WNUGF2Obxoo0zbqWt/T6KB/x7ysBtve3eAFw+7QvChJmHOZRspwxmM5sxTy4QWfWrDqVaF/4rioVajoE/qH/wF/vrZPQ2w"""
+str2 = """https://ccn.91p52.com//mp43/399037.mp4?st=WGDUdhJH_yxw0RO4kg_fxw&amp;f=5367IaGnenGddK7hp1KY3qA80lfhSkKKX6ixx6W9IHOh8R8ee8E6Y98nIGIkx5r5FWoBXoU6jNXQoNVzSnvdDGgCUaOasC0BfKdc9Q"""
+str3 = """<div data-setup="{}" poster="https://img2.t6k.co/thumb/399083.jpg" preload="auto" class="video-js vjs-sublime-skin vjs-16-9 vjs-paused player_one-dimensions vjs-controls-enabled vjs-workinghover vjs-v7 vjs-user-active" id="player_one" tabindex="-1" lang="en-us" role="region" aria-label="Video Player" style="visibility: visible;"><video id="player_one_html5_api" class="vjs-tech" preload="auto" poster="https://img2.t6k.co/thumb/399083.jpg" data-setup="{}" tabindex="-1">"""
 
 tittle = re.findall(r'poster="(.*?)"', str3)
 # tittle = re.findall("http.?://.*.91p.*.com/.?mp43/.*.mp4", str)
 
 print(tittle)
 
-dict2222={'2020-10-15':['1.234','2.3333'],'2020-10-14':['3.455','6.789']}
+dict2222 = {'2020-10-15': ['1.234', '2.3333'], '2020-10-14': ['3.455', '6.789']}
 
-for k,v in dict2222.items():
-    print(k,v[0],v[1])
+for k, v in dict2222.items():
+    print(k, v[0], v[1])
 
-url='xxx ddd vvv'
+url = 'xxx ddd vvv'
 
-r_url_1=url.replace('xxx','sss').replace('ddd','fff').replace('vvv','lll')
+r_url_1 = url.replace('xxx', 'sss').replace('ddd', 'fff').replace('vvv', 'lll')
 print(r_url_1)
+
+import tushare as ts
+ts_res = ts.get_hist_data('000001', '2020-06-01', '2020-11-08')
+ts_res.to_excel('000001.xlsx')
