@@ -11,6 +11,7 @@ from lib_scrpy import *
 from lxml import etree
 from lib_fund import retry
 import tushare
+import pandas as pd
 
 
 class LibQuote(MyLogger):
@@ -164,16 +165,26 @@ class LibQuote(MyLogger):
 
         return lt
 
+    def list_to_dframe(self, la: list, index: list):
+        """
+        列表list转换为Dataframe格式数据
+        :param la:
+        :param index: 标题
+        :return:
+        """
+        assert la and index,"la 和 index 不能为空"
+
+        la_df = pd.DataFrame(data=la, columns=index)
+
+        return la_df
+
 
 if __name__ == "__main__":
     quo = LibQuote()
     quo_code = ['002002', '000905', '600600', '688300']
-    zs_code = ['000001', '399001', '000905']
-    quo.quote_trade_info(quo_code)
+    zs_code = ['000001', '399001', '399006']
+    quo_trade = quo.quote_trade_info(quo_code)
     quo.zs_curr_info(zs_code)
-
-"""
-[2020-11-06 18:18:38] [INFO] [lib_quote.py quote_all_info 47] ['当前价(点)', '涨跌幅', '涨跌额', '换手率', '成交量', '市盈', '成交额']
-[2020-11-06 18:18:38] [INFO] [lib_quote.py quote_all_info 47] ['6.76', '-2.73%', '-0.19', '2.74%', '18.42万手', '-11.61', '0.88']
-[2020-11-06 18:18:38] [INFO] [lib_quote.py quote_all_info 47] ['3312.16', '-0.24%', '-7.97', '0.64%', '2.35亿手', ' ', '3255亿元']
-"""
+    index1 = ['股票名称', '股票代码', '当前价', '涨跌幅', '涨跌额', '今开', '昨收', '最高', '最低', '涨停', '跌停', '换手率', '量比', '成交量', '成交额', '市盈', '市净', '总市值', '流通市值']
+    df1 = quo.list_to_dframe(quo_trade, index=index1)
+    df1.to_excel('02.xlsx',index=False)
