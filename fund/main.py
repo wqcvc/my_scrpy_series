@@ -26,7 +26,8 @@ for i in range(len(quote_list)):
 # 获取单个基金的历史几天的 单位净值 历史净值 日收益率
 his_jjjz_list = ['161219']
 days = 30
+csv_name3 = f"{ff.code_to_name(his_jjjz_list[0])}({his_jjjz_list[0]})近{days}天净值.xlsx"
+
 his_jjjz = ff.fund_history_jjjz(his_jjjz_list[0], days)
-title3 = ['净值日期', '单位净值', '累计净值', '日增长率']
-csv_name3 = f"{ff.code_to_name(his_jjjz_list[0])}({his_jjjz_list[0]})近{days}天净值.csv"
+his_jjjz.to_excel(csv_name3,index=False)
 # ff.csv_save(his_jjjz, title=title3, csv_name=csv_name3)

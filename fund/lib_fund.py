@@ -20,6 +20,7 @@ import functools
 import inspect
 import ast
 import asyncio
+import pandas as pd
 
 
 # 装饰器:执行时间统计
@@ -125,10 +126,6 @@ class libFund(MyLogger):
             data_dict = self.__re_current_jjjz(content=text)
             total_data.append([data_dict['name'], data_dict['gszzl'], data_dict['gsz'], data_dict['dwjz']])
 
-        # 展示基金名字+实时估算净值
-        # for i in range(len(total_data)):
-        #     self.logger.info(f"[{total_data[i][0]}]  涨跌幅[{total_data[i][1]}]")
-
         return total_data
 
     def fund_rate_estimate(self):
@@ -189,13 +186,13 @@ class libFund(MyLogger):
 
         self.logger.info(f"当日总收益:[{xyz1}] 持有总收益:[{xyz2}] 持有总额:[{xyz3}] ")
 
-        all_income = []
+        all_info = []
         for i in range(len(self.name)):
-            all_income.append(
+            all_info.append(
                 [self.name[i], codes[i], self.gszzl[i], curr_amount[i], rates[i], income_amount[i], total_amount[i]])
-        all_income.append([f"当日总收益:[{xyz1}]", f"持有总收益:[{xyz2}]", f"持有总额:[{xyz3}]"])
+        all_info.append([f"当日总收益:[{xyz1}]", f"持有总收益:[{xyz2}]", f"持有总额:[{xyz3}]"])
 
-        return all_income
+        return all_info
 
     def fund_history_jjjz(self, code: str, day: int = 3):
         """
@@ -216,16 +213,18 @@ class libFund(MyLogger):
                 hisjz_list.append(jz_data[i])
         hisjz_list = hisjz_list[:day]
 
-        self.logger.info(f"净值日期	单位净值	累计净值	日增长率")
-        for i in range(len(hisjz_list)):
-            self.logger.info(hisjz_list[i])
         # day天的总收益率
         rates_in_day = 0
         for i in range(len(hisjz_list)):
             rates_in_day += float(hisjz_list[i][3])
         # self.logger.info(f"\n该基金最近 [{day}] 天总收益率为:[ {rates_in_day:.2f} ]\n")
 
-        return hisjz_list
+        # 转换为 Dataframe 格式
+        df_hisjz = pd.DataFrame(hisjz_list,columns=['净值日期', '单位净值', '累计净值', '日增长率'])
+        # df_hisjz.to_excel('xxx1.xlsx',index=False)
+
+        self.logger.info(df_hisjz)
+        return df_hisjz
 
     @retry(2, 5)
     # @delay(2)
@@ -245,23 +244,73 @@ class libFund(MyLogger):
 
         return quote_info_list
 
+    def fund_his_rates(self, code: str):
+        """
+
+        :param code: 基金代码
+        :param  : 涨幅: 1-阶段涨幅 2-季度涨幅 3-年度涨幅 4-评级
+        :return:
+        """
+        pass
+
+    def fund_basic_info(self, code: str):
+        """
+        基金规模数据+基金经理信息
+        :param code:
+        :param : 1.规模+规模增长数据 2.基金经理个人,管理规模,业绩等信息
+        :return:
+        """
+        pass
+
+    def fund_special_info(self, code: str):
+        """
+        基金特殊数据
+        :param code:
+        :param : 1.近1年夏普比率  2.近1年波动率 3.近1年最大回撤 4.近1年最大回撤率
+        :return:
+        """
+        pass
+
+    def funds_all_list(self,to_file):
+        """
+        市场上所有等基金列表,存入xlsx
+        :param to_file:是否写入xlsx文件
+        :return:
+        """
+        resp = self.__funds_list()
+
+        re_rule = {
+            2: "\"(.*?)\",\".*?\",\"(.*?)\",\"(.*?)\",\".*?\""
+        }
+
+        re_res2 = re.findall(re_rule[2],str(resp))
+        lpd = pd.DataFrame(re_res2,columns=['code','name','tpye'])
+        if to_file == 1:
+            lpd.to_excel('all_funds.xlsx',index=False)
+            self.logger.info(f"all_funds write to xlsx file finish.")
+        else:
+            pass
+
+        return lpd
+
     def code_to_name(self, code: str):
         """
         根绝code得到基金名称
         :param code:
         :return:
         """
-        resp = self.fund_all_funds()
+        resp = self.__funds_list()
 
         re_rule = {
-            1: "\"xxxxxx\",\".*?\",\"(.*?)\",",
+            1: "\"xxxxxx\",\".*?\",\"(.*?)\","
         }
-        re_res = re.findall(re_rule[1].replace('xxxxxx', code), str(resp))
+        re_res= re.findall(re_rule[1].replace('xxxxxx', code), str(resp))
         if re_res[0]:
             code_name = re_res[0]
+
         return code_name
 
-    def fund_all_funds(self):
+    def __funds_list(self):
         """
         目前市场上所有成立的基金
         数据来源:http://fund.eastmoney.com/js/fundcode_search.js
@@ -410,6 +459,17 @@ class libFund(MyLogger):
         """
         pass
 
+    def list_to_dframe(self, la: list, index: list):
+        """
+        列表list转换为Dataframe格式数据
+        :param la:
+        :param index: 标题
+        :return:
+        """
+        assert la and index,"la 和 index 不能为空"
+        la_df = pd.DataFrame(data=la, columns=index)
+        return la_df
+
     def csv_save(self, listA: list, title: list, csv_name: str = _current_day, mode: str = 'a+'):
         """
         数据存储进csv文件
@@ -473,10 +533,11 @@ if __name__ == "__main__":
     # 获取基金列表的实时涨跌幅
     # ff.fund_current_jjjz()
     # 获取基金列表的持有收益率
-    ff.fund_rate_estimate()
-    # 获取基金列表的持有总金额和持有收益金额,实时估算收益
-    ff.fund_hold_info
-    # 获取单个基金的历史几天的 单位净值 历史净值 日收益率
-    ff.fund_history_jjjz('512000', 1)
-    # 获取单个基金的股票持仓情况及股票实时的涨跌幅
-    ff.fund_hold_shares('270002')
+    # ff.fund_rate_estimate()
+    # # 获取基金列表的持有总金额和持有收益金额,实时估算收益
+    # ff.fund_hold_info
+    # # 获取单个基金的历史几天的 单位净值 历史净值 日收益率
+    # ff.fund_history_jjjz('512000', 1)
+    # # 获取单个基金的股票持仓情况及股票实时的涨跌幅
+    # ff.fund_hold_shares('270002')
+    ff.funds_all_list(to_file=0)

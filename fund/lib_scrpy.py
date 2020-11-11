@@ -11,10 +11,10 @@ import requests
 import datetime
 from fake_useragent import UserAgent
 from pyppeteer import launch
-import asyncio
 from time import time
 from lib_logger import MyLogger
 import logging
+
 
 
 class libScrpy(MyLogger):
@@ -98,6 +98,14 @@ class libScrpy(MyLogger):
         self.logger.info(f"this request cost seconds:{end_time - start_time}")
 
         return text
+
+    def selenium_method(self,url: str):
+        """
+        selenium无头浏览器模式获取数据,原理和pyppeteer_method差不多,以后再实现
+        :param url:
+        :return:
+        """
+        pass
 
     def proxy_pool_set(self):
         """

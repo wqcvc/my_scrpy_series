@@ -351,5 +351,26 @@ r_url_1 = url.replace('xxx', 'sss').replace('ddd', 'fff').replace('vvv', 'lll')
 print(r_url_1)
 
 import tushare as ts
-ts_res = ts.get_hist_data('000001', '2020-06-01', '2020-11-08')
-ts_res.to_excel('000001.xlsx')
+import pandas as pd
+import lzma
+# ts_res = ts.get_hist_data('000001', '2020-06-01', '2020-11-08')
+# ts_res.to_excel('000001.xlsx')
+
+a = [['a', '1.2', '4.2'], ['b', '70', '0.03'], ['x', '5', '0']]
+df = pd.DataFrame(a, columns=['one', 'two', 'three'])
+df.to_excel('000002.xlsx',index=False)
+
+import  json
+
+s='var r = [["980003","TPYLGYGDCYZ","太平洋六个月滚动持有债","债券型","TAIPINGYANGLIUGEYUEGUNDONGCHIYOUZHAI"],["000001","HXCZHH","华夏成长混合","混合型","HUAXIACHENGZHANGHUNHE"]];'
+
+rules="\"(.*?)\",\".*?\",\"(.*?)\",\"(.*?)\",\".*?\""
+
+s2 =  re.findall(rules,s)
+
+print(s2)
+print(s2[0][1])
+print(s2[1][0])
+
+
+

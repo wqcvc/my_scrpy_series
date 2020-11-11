@@ -12,6 +12,7 @@ from lxml import etree
 from lib_fund import retry
 import tushare
 import pandas as pd
+import asyncio
 
 
 class LibQuote(MyLogger):
@@ -32,8 +33,10 @@ class LibQuote(MyLogger):
         :return:
         """
         assert code, "股票代码必传"
-        la = [['股票名称', '股票代码', '当前价', '涨跌幅', '涨跌额', '今开', '昨收', '最高', '最低', '涨停', '跌停', '换手率', '量比', '成交量', '成交额', '市盈',
-               '市净', '总市值', '流通市值']]
+        la = []
+        title = ['股票名称', '股票代码', '当前价', '涨跌幅', '涨跌额', '今开', '昨收', '最高', '最低', '涨停', '跌停', '换手率', '量比', '成交量', '成交额',
+                 '市盈',
+                 '市净', '总市值', '流通市值']
         for i in range(len(code)):
             #  1.拼凑url
             if code[i][0:3] in ('000', '002',
@@ -54,9 +57,10 @@ class LibQuote(MyLogger):
             #  4.转储数据
             la.append(results)
 
-        for i in range(len(la)):
-            self.logger.info(f"{la[i]}")
-        return la
+        df_la = pd.DataFrame(la, columns=title)
+        self.logger.info(df_la)
+
+        return df_la
 
     def __quote_match_rule(self, content):
         """
@@ -67,7 +71,6 @@ class LibQuote(MyLogger):
         assert content, "content不能为空"
 
         html = etree.HTML(content)
-        # la = [['股票名称','股票代码','当前价','涨跌幅','涨跌额','今开','昨收','最高','最低','涨停','跌停', '换手率', '量比','成交量', '成交额', '市盈','市净','总市值','流通市值']]
         xpath_rules = {
             1: '//*[@id="name"]/text()',  # 股票名称
             2: '//*[@id="code"]/text()',  # 股票代码
@@ -109,7 +112,8 @@ class LibQuote(MyLogger):
         """
         # http://quote.eastmoney.com/zs399005.html
         assert code, "指数代码必传"
-        la = [['指数名称', '指数代码', '当前点', '涨跌幅', '涨跌额', '今开', '昨收', '最高', '最低', '换手率', '振幅', '成交量', '成交额']]
+        la = []
+        title = ['指数名称', '指数代码', '当前点', '涨跌幅', '涨跌额', '今开', '昨收', '最高', '最低', '换手率', '振幅', '成交量', '成交额']
         for i in range(len(code)):
             try:
                 #  1.拼凑指数url
@@ -125,8 +129,9 @@ class LibQuote(MyLogger):
             #  4.转储数据
             la.append(results)
 
-        for i in range(len(la)):
-            self.logger.info(f"{la[i]}")
+        df_la = pd.DataFrame(la, columns=title)
+        self.logger.info(df_la)
+
         return la
 
     def __zs_match_rule(self, content):
@@ -165,6 +170,21 @@ class LibQuote(MyLogger):
 
         return lt
 
+    def quote_all_lists(self):
+        """
+        获取所有股票代码+名称
+        :return:
+        """
+        pass
+
+    def quote_info(self,code):
+        """
+        获取单只股票信息:to define
+        :param code:
+        :return:
+        """
+        pass
+
     def list_to_dframe(self, la: list, index: list):
         """
         列表list转换为Dataframe格式数据
@@ -172,8 +192,7 @@ class LibQuote(MyLogger):
         :param index: 标题
         :return:
         """
-        assert la and index,"la 和 index 不能为空"
-
+        assert la and index, "la 和 index 不能为空"
         la_df = pd.DataFrame(data=la, columns=index)
 
         return la_df
@@ -183,8 +202,5 @@ if __name__ == "__main__":
     quo = LibQuote()
     quo_code = ['002002', '000905', '600600', '688300']
     zs_code = ['000001', '399001', '399006']
-    quo_trade = quo.quote_trade_info(quo_code)
-    quo.zs_curr_info(zs_code)
-    index1 = ['股票名称', '股票代码', '当前价', '涨跌幅', '涨跌额', '今开', '昨收', '最高', '最低', '涨停', '跌停', '换手率', '量比', '成交量', '成交额', '市盈', '市净', '总市值', '流通市值']
-    df1 = quo.list_to_dframe(quo_trade, index=quo_trade[0])
-    df1.to_excel('02.xlsx',index=False)
+    quo_trade_info = quo.quote_trade_info(quo_code)
+    zs_info = quo.zs_curr_info(zs_code)
