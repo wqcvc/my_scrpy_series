@@ -251,6 +251,10 @@ class libFund(MyLogger):
         :param  : 涨幅: 1-阶段涨幅 2-季度涨幅 3-年度涨幅 4-评级
         :return:
         """
+        # http://fundf10.eastmoney.com/jdzf_270002.html 阶段涨幅
+        # 季度年涨幅 http://fundf10.eastmoney.com/jndzf_270002.html
+
+        # 持有人结构 http://fundf10.eastmoney.com/cyrjg_270002.html
         pass
 
     def fund_basic_info(self, code: str):
@@ -260,6 +264,8 @@ class libFund(MyLogger):
         :param : 1.规模+规模增长数据 2.基金经理个人,管理规模,业绩等信息
         :return:
         """
+        # 规模变动  http://fundf10.eastmoney.com/gmbd_270002.html
+        # 基金经理  http://fundf10.eastmoney.com/jjjl_270002.html
         pass
 
     def fund_special_info(self, code: str):
@@ -269,6 +275,7 @@ class libFund(MyLogger):
         :param : 1.近1年夏普比率  2.近1年波动率 3.近1年最大回撤 4.近1年最大回撤率
         :return:
         """
+        # 特殊数据 http://fundf10.eastmoney.com/tsdata_270002.html
         pass
 
     def funds_all_list(self,to_file):

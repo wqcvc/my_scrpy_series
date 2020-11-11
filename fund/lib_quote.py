@@ -177,7 +177,7 @@ class LibQuote(MyLogger):
         """
         pass
 
-    def quote_info(self,code):
+    def quote_info(self, code):
         """
         获取单只股票信息:to define
         :param code:
@@ -187,7 +187,7 @@ class LibQuote(MyLogger):
 
     def list_to_dframe(self, la: list, index: list):
         """
-        列表list转换为Dataframe格式数据
+        列表list转换为 Dataframe 格式数据
         :param la:
         :param index: 标题
         :return:
