@@ -186,5 +186,5 @@ if __name__ == "__main__":
     quo_trade = quo.quote_trade_info(quo_code)
     quo.zs_curr_info(zs_code)
     index1 = ['股票名称', '股票代码', '当前价', '涨跌幅', '涨跌额', '今开', '昨收', '最高', '最低', '涨停', '跌停', '换手率', '量比', '成交量', '成交额', '市盈', '市净', '总市值', '流通市值']
-    df1 = quo.list_to_dframe(quo_trade, index=index1)
+    df1 = quo.list_to_dframe(quo_trade, index=quo_trade[0])
     df1.to_excel('02.xlsx',index=False)

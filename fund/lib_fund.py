@@ -19,6 +19,7 @@ import time
 import functools
 import inspect
 import ast
+import asyncio
 
 
 # 装饰器:执行时间统计
@@ -76,6 +77,12 @@ def retry(max_retries, count_down):
 
 
 class libFund(MyLogger):
+    # 使用东财数据
+    _data_source_url = 'http://fund.eastmoney.com/xxx.html'
+    _current_jjjz_url = 'http://fundgz.1234567.com.cn/js/xxx.js'
+    _history_jjjz_url = 'http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code=xxx&per=ddd&page=ppp'
+    _quote_hold_url = 'http://fundf10.eastmoney.com/ccmx_xxx.html'
+
     _current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
     _current_day = datetime.datetime.now().strftime('%Y%m%d')
 
@@ -102,18 +109,6 @@ class libFund(MyLogger):
             self.gsz.append(list_tmp[i][2])
             self.dwjz.append(list_tmp[i][3])
 
-    def __json_to_dict(self, json_name: str = "fund_list.json"):
-        """
-        将json的格式转换为字典,方便后续处理
-        :param json_name: 默认json文件名
-        :return:
-        """
-        dict = json.load(open(json_name, 'r', encoding='utf-8'))
-        if dict:
-            return dict
-        else:
-            self.logger.info("json to dict failed.")
-
     def fund_current_jjjz(self, list_a: list = None):
         """
         基金实时涨跌幅 数据统一获取入口
@@ -126,7 +121,7 @@ class libFund(MyLogger):
         total_data = []
         for i in range(len(list_a)):
             self.logger.info(f"request fund_code:[{list_a[i]}]")
-            text = self.scrpy.single_request(list_a[i], flag=2, method=0)
+            text = self.fund_request_by_code(list_a[i], flag=2, method=0)
             data_dict = self.__re_current_jjjz(content=text)
             total_data.append([data_dict['name'], data_dict['gszzl'], data_dict['gsz'], data_dict['dwjz']])
 
@@ -214,7 +209,7 @@ class libFund(MyLogger):
         page = day // 49 + 1  # 要请求的页数
         hisjz_list = []
         for p in range(page):
-            content = self.scrpy.single_request(code=code, flag=3, day=49, page=p + 1)  # day=49固定,分页最大49
+            content = self.fund_request_by_code(code=code, flag=3, day=49, page=p + 1)  # day=49固定,分页最大49
             jz_data = self.__re_history_jjjz(content)
             # self.logger.info(jz_data)
             for i in range(len(jz_data)):
@@ -242,7 +237,7 @@ class libFund(MyLogger):
         :return: 基金的前10持仓股票的基本信息列表
         """
         assert code, "基金代码必传"
-        content = self.scrpy.single_request(code=code, method=1, flag=4)
+        content = self.fund_request_by_code(code=code, method=1, flag=4)
         quote_info_list = self.__re_quote_hold(content)
 
         for i in range(len(quote_info_list)):
@@ -275,6 +270,63 @@ class libFund(MyLogger):
         url = 'http://fund.eastmoney.com/js/fundcode_search.js'
         resp = self.scrpy.request_method(url)
         return resp
+
+    def fund_request_by_code(self, code: str, flag: int = 1, method: int = 0, **kwargs):
+        """
+        通过传入基金code的方式根据功能自动拼接url获取数据
+        :param code:fund代码列表
+        :param flag:决定具体请求url.对应url的类型 1:_data_source_url基金主页 2:_current_jjjz_url实时净值 3:_history_jjjz_url历史净值
+        :param method:请求方式request/pyppeteer
+        :return:
+        """
+        url = self.__url_combine(flag, code, **kwargs)
+        assert url, "url为空"
+        self.logger.info(f"request url:[{url}])")
+        if method == 0:  # request请求
+            self.logger.info("request-method")
+            resp = self.scrpy.request_method(url=url)
+
+        elif method == 1:  # pyppeteer请求，获取动态js可以
+            self.logger.info(f"pyppeteer-method.")
+            resp = asyncio.get_event_loop().run_until_complete(self.scrpy.pyppeteer_method(url=url))
+        else:
+            self.logger.info(f"dont support this method.")
+            return
+        return resp
+
+    def __json_to_dict(self, json_name: str = "fund_list.json"):
+        """
+        将json的格式转换为字典,方便后续处理
+        :param json_name: 默认json文件名
+        :return:
+        """
+        dict = json.load(open(json_name, 'r', encoding='utf-8'))
+        if dict:
+            return dict
+        else:
+            self.logger.info("json to dict failed.")
+
+    def __url_combine(self, flag, code, **kwargs):
+        """
+        生成对应需要的url
+        :param flag: 对应url的类型 1:_data_source_url基金主页 2:_current_jjjz_url实时净值 3:_history_jjjz_url历史净值
+        :param code: 基金代码
+        :return:
+        """
+        if flag == 1:  # 天天基金主页
+            fund_url = self._data_source_url.replace('xxx', code)
+        elif flag == 2:  # 实时涨跌幅url
+            fund_url = self._current_jjjz_url.replace('xxx', code)
+        elif flag == 3:  # 历史净值rul
+            if kwargs['day']:
+                fund_url = self._history_jjjz_url.replace('xxx', code).replace('ddd', str(kwargs['day'])).\
+                    replace('ppp',str(kwargs['page']))
+        elif flag == 4:  # 基金股票持仓url
+            fund_url = self._quote_hold_url.replace('xxx', code)
+        else:
+            self.logger.info("Unknown flag number,not Url.")
+        self.logger.debug(f"__url_combine url:{fund_url}")
+        return fund_url
 
     def __re_current_jjjz(self, content):
         """

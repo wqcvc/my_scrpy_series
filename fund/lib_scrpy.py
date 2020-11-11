@@ -18,61 +18,10 @@ import logging
 
 
 class libScrpy(MyLogger):
-    _data_source_url = 'http://fund.eastmoney.com/xxx.html'
-    _current_jjjz_url='http://fundgz.1234567.com.cn/js/xxx.js'
-    _history_jjjz_url='http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code=xxx&per=ddd&page=ppp'
-    _quote_hold_url='http://fundf10.eastmoney.com/ccmx_xxx.html'
-    # http: // fundf10.eastmoney.com / jjjz_270002.html
     _current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
-    def __init__(self,level=logging.INFO):
-        super().__init__(__name__,level=level)
-        # self.logger=MyLogger("libScrpy")
-
-    def __url_combine(self, flag, code, **kwargs):
-        """
-        生成对应需要的url
-        :param flag: 对应url的类型 1:_data_source_url基金主页 2:_current_jjjz_url实时净值 3:_history_jjjz_url历史净值
-        :param code: 基金代码
-        :return:
-        """
-        if flag == 1:  # 天天基金主页
-            fund_url = self._data_source_url.replace('xxx', code)
-        elif flag == 2:  # 实时涨跌幅url
-            fund_url = self._current_jjjz_url.replace('xxx', code)
-        elif flag == 3:  # 历史净值rul
-            if kwargs['day']:
-                fund_url = self._history_jjjz_url.replace('xxx', code).replace('ddd',  str(kwargs['day'])).replace('ppp', str(kwargs['page']))
-        elif flag == 4:  # 基金股票持仓url
-            fund_url=self._quote_hold_url.replace('xxx',code)
-        else:
-            self.logger.info("Unknown flag number,not Url.")
-        self.logger.debug(f"__url_combine url:{fund_url}")
-        return fund_url
-
-    def single_request(self, code: str, flag: int = 1, method: int = 0,**kwargs):
-        """
-        单个请求
-        :param code:fund代码
-        :param flag:决定具体请求url.对应url的类型 1:_data_source_url基金主页 2:_current_jjjz_url实时净值 3:_history_jjjz_url历史净值
-        :param method:请求方式request/pyppeteer
-        :param url:单个url
-        :return:
-        """
-        url = self.__url_combine(flag,code,**kwargs)
-        assert url, "url为空"
-        self.logger.info(f"request url:[{url}])")
-        if method == 0:  # request请求
-            self.logger.info("request-method")
-            resp = self.request_method(url=url)
-
-        elif method == 1:  # pyppeteer请求，获取动态js可以
-            self.logger.info(f"pyppeteer-method.")
-            resp = asyncio.get_event_loop().run_until_complete(self.pyppeteer_method(url=url))
-        else:
-            self.logger.info(f"dont support this method.")
-            return
-        return resp
+    def __init__(self, level=logging.INFO):
+        super().__init__(__name__, level=level)
 
     def mult_request(self, urls: list):
         """
@@ -84,7 +33,7 @@ class libScrpy(MyLogger):
 
     def request_method(self, url):
         """
-        使用request库
+        使用正常的request库请求
         :return:
         :param url:
         :return:
@@ -96,7 +45,7 @@ class libScrpy(MyLogger):
         }
         start_time = time()
         resp = requests.request(method="GET", url=url, headers=headers)
-        resp.encoding='utf-8'
+        resp.encoding = 'utf-8'
         self.logger.info(f"request status_code:[{resp.status_code}]")
 
         if resp.status_code != 200:
@@ -109,7 +58,7 @@ class libScrpy(MyLogger):
 
     async def pyppeteer_method(self, url):
         """
-        使用pyppeteer库
+        使用pyppeteer库可以请求到js数据
         :param url:
         :return:
         """
@@ -157,7 +106,7 @@ class libScrpy(MyLogger):
         """
         pass
 
-    def save_to_file(self,content):
+    def save_to_file(self, content):
         """
         保存内容到文件
         :param content:
@@ -167,6 +116,6 @@ class libScrpy(MyLogger):
 
 # if __name__ == "__main__":
 #     scrpp=libScrpy()
-#     resp=scrpp.single_request('512000',1)
-#     # resp=scrpp.single_request('512000')
-#     # print(resp)
+#     resp=scrpp.fund_request_by_code('512000',1)
+#     # resp=scrpp.fund_request_by_code('512000')
+
