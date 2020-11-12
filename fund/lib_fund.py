@@ -122,7 +122,7 @@ class libFund(MyLogger):
         total_data = []
         for i in range(len(list_a)):
             self.logger.info(f"request fund_code:[{list_a[i]}]")
-            text = self.fund_request_by_code(list_a[i], flag=2, method=0)
+            text = self.__fund_request_by_code(list_a[i], flag=2, method=0)
             data_dict = self.__re_current_jjjz(content=text)
             total_data.append([data_dict['name'], data_dict['gszzl'], data_dict['gsz'], data_dict['dwjz']])
 
@@ -206,9 +206,8 @@ class libFund(MyLogger):
         page = day // 49 + 1  # 要请求的页数
         hisjz_list = []
         for p in range(page):
-            content = self.fund_request_by_code(code=code, flag=3, day=49, page=p + 1)  # day=49固定,分页最大49
+            content = self.__fund_request_by_code(code=code, flag=3, day=49, page=p + 1)  # day=49固定,分页最大49
             jz_data = self.__re_history_jjjz(content)
-            # self.logger.info(jz_data)
             for i in range(len(jz_data)):
                 hisjz_list.append(jz_data[i])
         hisjz_list = hisjz_list[:day]
@@ -217,7 +216,6 @@ class libFund(MyLogger):
         rates_in_day = 0
         for i in range(len(hisjz_list)):
             rates_in_day += float(hisjz_list[i][3])
-        # self.logger.info(f"\n该基金最近 [{day}] 天总收益率为:[ {rates_in_day:.2f} ]\n")
 
         # 转换为 Dataframe 格式
         df_hisjz = pd.DataFrame(hisjz_list,columns=['净值日期', '单位净值', '累计净值', '日增长率'])
@@ -236,7 +234,7 @@ class libFund(MyLogger):
         :return: 基金的前10持仓股票的基本信息列表
         """
         assert code, "基金代码必传"
-        content = self.fund_request_by_code(code=code, method=1, flag=4)
+        content = self.__fund_request_by_code(code=code, method=1, flag=4)
         quote_info_list = self.__re_quote_hold(content)
 
         for i in range(len(quote_info_list)):
@@ -248,14 +246,121 @@ class libFund(MyLogger):
         """
 
         :param code: 基金代码
-        :param  : 涨幅: 1-阶段涨幅 2-季度涨幅 3-年度涨幅 4-评级
+        :param  : 涨幅: 1-阶段涨幅 2-季度涨幅 3-年度涨幅 4-持有人结构
         :return:
         """
-        # http://fundf10.eastmoney.com/jdzf_270002.html 阶段涨幅
-        # 季度年涨幅 http://fundf10.eastmoney.com/jndzf_270002.html
+        # 阶段涨幅   http://fundf10.eastmoney.com/jdzf_270002.html
+        # 季度年涨幅  http://fundf10.eastmoney.com/jndzf_270002.html
+        # 持有人结构  http://fundf10.eastmoney.com/cyrjg_270002.html
+        # 规模变动   http://fundf10.eastmoney.com/gmbd_270002.html
+        # 基金经理   http://fundf10.eastmoney.com/jjjl_270002.html
+        # 特殊数据   http://fundf10.eastmoney.com
 
-        # 持有人结构 http://fundf10.eastmoney.com/cyrjg_270002.html
-        pass
+        #阶段涨幅
+        content1 = self.__fund_request_by_code(code=code, flag=5, method=1)
+        res1,res1_t = self.__re_quote_jdzf(content=content1)
+        #季度/年涨幅
+        content2 = self.__fund_request_by_code(code=code, flag=6, method=1)
+        res2,res2_t = self.__re_quote_jndzf(content=content2)
+        # 持有人结构
+        content3 = self.__fund_request_by_code(code=code, flag=7, method=1)
+        res3,res3_t = self.__re_quote_cyrjg(content=content3)
+
+        res_f_t = res1_t + res2_t + res3_t
+        res_f = [res1 + res2 + res3]
+        df_f = pd.DataFrame(res_f,columns=res_f_t)
+
+        # df_f.to_excel("xs.xlsx")
+        return df_f
+
+    def __re_quote_jdzf(self, content):
+        """
+        使用xpath匹配基金的阶段涨幅
+        :param content: 网页内容，需要解析的
+        :return:
+        """
+        html = etree.HTML(content)
+        xpath_rules = {
+            1: '//*[@id="jdzftable"]/div/ul[2]/li[2]/text()',   # 今年来  近1周  近1，3，6个月  近1，2，3，5年 成立以来 ul+
+            2: '//*[@id="jdzftable"]/div/ul[2]/li[1]/text()'   # 标题 ul+
+
+        }
+
+        listA = []
+        list_t = []
+        for i in range(10):
+            res = html.xpath(xpath_rules[1].replace('ul[2]',f"ul[{i+2}]"))
+            res2 = html.xpath(xpath_rules[2].replace('ul[2]',f"ul[{i+2}]"))
+            if not res:
+                listA.append('-')
+            else:
+                listA.append(res[0])
+            list_t.append(res2[0])
+        return listA,list_t
+
+    def __re_quote_jndzf(self, content):
+        """
+        使用xpath匹配基金的季度/年涨幅
+        :param content: 网页内容，需要解析的
+        :return:
+        """
+        html = etree.HTML(content)
+        xpath_rules = {
+            1: '//*[@id="quarterzftable"]/table/tbody/tr[1]/td[2]/text()',   # 季度涨幅 td+
+            2: '//*[@id="yearzftable"]/table/tbody/tr[1]/td[2]/text()',   # 年度涨幅 td+
+            3: '//*[@id="quarterzftable"]/table/thead/tr/th[2]/text()',   # 季度标题 th+
+            4: '//*[@id="yearzftable"]/table/thead/tr/th[2]/text()'   # 年度标题 th+
+        }
+
+        # 最近8个季度的涨幅
+        listA = []
+        list_t = []
+        for i in range(8):
+            res = html.xpath(xpath_rules[1].replace('td[2]',f"td[{i+2}]"))
+            res2 = html.xpath(xpath_rules[3].replace('th[2]',f"th[{i+2}]"))
+            if not res:
+                listA.append('-')
+            else:
+                listA.append(res[0])
+            list_t.append(res2[0])
+
+        # 最近8年的业绩
+        for i in range(8):
+            res = html.xpath(xpath_rules[2].replace('td[2]',f"td[{i+2}]"))
+            res2 = html.xpath(xpath_rules[4].replace('th[2]',f"th[{i+2}]"))
+            if not res:
+                listA.append('-')
+            else:
+                listA.append(res[0])
+            list_t.append(res2[0])
+
+        return listA,list_t
+
+    def __re_quote_cyrjg(self, content):
+        """
+        使用xpath匹配基金的持有人结构
+        :param content: 网页内容，需要解析的
+        :return:
+        """
+        html = etree.HTML(content)
+        xpath_rules = {
+            1: '//*[@id="cyrjgtable"]/table/tbody/tr[1]/td[1]/text()',   # 只要最近更新的一期结构中 各占比例即可。 日期 机构 个人 内部 总份额 td+
+            2: '//*[@id="cyrjgtable"]/table/thead/tr/th[1]/text()'   # 标题 th+
+
+        }
+
+        listA = []
+        list_t = []
+        for i in range(5):
+            res = html.xpath(xpath_rules[1].replace('td[1]',f"td[{i+1}]"))
+            res2 = html.xpath(xpath_rules[2].replace('th[1]',f"th[{i+1}]"))
+            if not res:
+                listA.append('-')
+            else:
+                listA.append(res[0])
+            list_t.append(res2[0])
+        return listA,list_t
+
 
     def fund_basic_info(self, code: str):
         """
@@ -265,7 +370,10 @@ class libFund(MyLogger):
         :return:
         """
         # 规模变动  http://fundf10.eastmoney.com/gmbd_270002.html
+        content2 = self.__fund_request_by_code(code=code, flag=8, method=1)
         # 基金经理  http://fundf10.eastmoney.com/jjjl_270002.html
+        content2 = self.__fund_request_by_code(code=code, flag=9, method=1)
+
         pass
 
     def fund_special_info(self, code: str):
@@ -276,6 +384,7 @@ class libFund(MyLogger):
         :return:
         """
         # 特殊数据 http://fundf10.eastmoney.com/tsdata_270002.html
+        content2 = self.__fund_request_by_code(code=code, flag=10, method=1)
         pass
 
     def funds_all_list(self,to_file):
@@ -327,12 +436,22 @@ class libFund(MyLogger):
         resp = self.scrpy.request_method(url)
         return resp
 
-    def fund_request_by_code(self, code: str, flag: int = 1, method: int = 0, **kwargs):
+    def __fund_request_by_code(self, code: str, flag: int = 1, method: int = 0, **kwargs):
         """
         通过传入基金code的方式根据功能自动拼接url获取数据
         :param code:fund代码列表
-        :param flag:决定具体请求url.对应url的类型 1:_data_source_url基金主页 2:_current_jjjz_url实时净值 3:_history_jjjz_url历史净值
-        :param method:请求方式request/pyppeteer
+        :param flag:决定具体请求url.flag
+            1. 基金主页    http://fund.eastmoney.com/xxx.html
+            2. 实时净值    http://fundgz.1234567.com.cn/js/xxx.js
+            3. 历史净值    http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code=xxx&per=ddd&page=ppp
+            4. 前十股票持仓 http://fundf10.eastmoney.com/ccmx_xxx.html
+            5. 阶段涨幅    http://fundf10.eastmoney.com/jdzf_270002.html
+            6. 季度年涨幅  http://fundf10.eastmoney.com/jndzf_270002.html
+            7. 持有人结构  http://fundf10.eastmoney.com/cyrjg_270002.html
+            8. 规模变动    http://fundf10.eastmoney.com/gmbd_270002.html
+            9. 基金经理    http://fundf10.eastmoney.com/jjjl_270002.html
+            10. 特殊数据   http://fundf10.eastmoney.com/tsdata_270002.html
+        :param method:请求方式request/pyppeteer 0-request 1-pyppeterr
         :return:
         """
         url = self.__url_combine(flag, code, **kwargs)
@@ -365,7 +484,17 @@ class libFund(MyLogger):
     def __url_combine(self, flag, code, **kwargs):
         """
         生成对应需要的url
-        :param flag: 对应url的类型 1:_data_source_url基金主页 2:_current_jjjz_url实时净值 3:_history_jjjz_url历史净值
+        :param flag: 对应url的类型
+            1. 基金主页    http://fund.eastmoney.com/xxx.html
+            2. 实时净值    http://fundgz.1234567.com.cn/js/xxx.js
+            3. 历史净值    http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code=xxx&per=ddd&page=ppp
+            4. 前十股票持仓 http://fundf10.eastmoney.com/ccmx_xxx.html
+            5. 阶段涨幅    http://fundf10.eastmoney.com/jdzf_270002.html
+            6. 季度年涨幅  http://fundf10.eastmoney.com/jndzf_270002.html
+            7. 持有人结构  http://fundf10.eastmoney.com/cyrjg_270002.html
+            8. 规模变动    http://fundf10.eastmoney.com/gmbd_270002.html
+            9. 基金经理    http://fundf10.eastmoney.com/jjjl_270002.html
+            10. 特殊数据   http://fundf10.eastmoney.com/tsdata_270002.html
         :param code: 基金代码
         :return:
         """
@@ -379,8 +508,20 @@ class libFund(MyLogger):
                     replace('ppp',str(kwargs['page']))
         elif flag == 4:  # 基金股票持仓url
             fund_url = self._quote_hold_url.replace('xxx', code)
+        elif flag == 5:  # 阶段涨幅
+            fund_url = self._quote_hold_url.replace('ccmx_xxx','jdzf_' + code)
+        elif flag == 6:  # 季度/年涨幅    _quote_hold_url = 'http://fundf10.eastmoney.com/ccmx_xxx.html'
+            fund_url = self._quote_hold_url.replace('ccmx_xxx','jndzf_' + code)
+        elif flag == 7:  # 持有人结构
+            fund_url = self._quote_hold_url.replace('ccmx_xxx','cyrjg_' + code)
+        elif flag == 8:  # 规模+规模变动
+            fund_url = self._quote_hold_url.replace('ccmx_xxx','gmbd_' + code)
+        elif flag == 9:  # 基金经理
+            fund_url = self._quote_hold_url.replace('ccmx_xxx','jjjl_' + code)
+        elif flag == 10:  # 特色数据
+            fund_url = self._quote_hold_url.replace('ccmx_xxx','tsdata_' + code)
         else:
-            self.logger.info("Unknown flag number,not Url.")
+            self.logger.info("Unknown flag number,cant combine url.")
         self.logger.debug(f"__url_combine url:{fund_url}")
         return fund_url
 
@@ -547,4 +688,6 @@ if __name__ == "__main__":
     # ff.fund_history_jjjz('512000', 1)
     # # 获取单个基金的股票持仓情况及股票实时的涨跌幅
     # ff.fund_hold_shares('270002')
-    ff.funds_all_list(to_file=0)
+    # ff.funds_all_list(to_file=0)
+    # 历史各种涨幅数据
+    sss = ff.fund_his_rates('270002')
