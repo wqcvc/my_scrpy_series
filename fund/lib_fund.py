@@ -252,115 +252,23 @@ class libFund(MyLogger):
         # 阶段涨幅   http://fundf10.eastmoney.com/jdzf_270002.html
         # 季度年涨幅  http://fundf10.eastmoney.com/jndzf_270002.html
         # 持有人结构  http://fundf10.eastmoney.com/cyrjg_270002.html
-        # 规模变动   http://fundf10.eastmoney.com/gmbd_270002.html
-        # 基金经理   http://fundf10.eastmoney.com/jjjl_270002.html
-        # 特殊数据   http://fundf10.eastmoney.com
 
         #阶段涨幅
         content1 = self.__fund_request_by_code(code=code, flag=5, method=1)
-        res1,res1_t = self.__re_quote_jdzf(content=content1)
+        res1,res1_t = self.__re_fund_jdzf(content=content1)
         #季度/年涨幅
         content2 = self.__fund_request_by_code(code=code, flag=6, method=1)
-        res2,res2_t = self.__re_quote_jndzf(content=content2)
+        res2,res2_t = self.__re_fund_jndzf(content=content2)
         # 持有人结构
         content3 = self.__fund_request_by_code(code=code, flag=7, method=1)
-        res3,res3_t = self.__re_quote_cyrjg(content=content3)
+        res3,res3_t = self.__re_fund_cyrjg(content=content3)
 
         res_f_t = res1_t + res2_t + res3_t
         res_f = [res1 + res2 + res3]
         df_f = pd.DataFrame(res_f,columns=res_f_t)
-
+        self.logger.info(df_f)
         # df_f.to_excel("xs.xlsx")
         return df_f
-
-    def __re_quote_jdzf(self, content):
-        """
-        使用xpath匹配基金的阶段涨幅
-        :param content: 网页内容，需要解析的
-        :return:
-        """
-        html = etree.HTML(content)
-        xpath_rules = {
-            1: '//*[@id="jdzftable"]/div/ul[2]/li[2]/text()',   # 今年来  近1周  近1，3，6个月  近1，2，3，5年 成立以来 ul+
-            2: '//*[@id="jdzftable"]/div/ul[2]/li[1]/text()'   # 标题 ul+
-
-        }
-
-        listA = []
-        list_t = []
-        for i in range(10):
-            res = html.xpath(xpath_rules[1].replace('ul[2]',f"ul[{i+2}]"))
-            res2 = html.xpath(xpath_rules[2].replace('ul[2]',f"ul[{i+2}]"))
-            if not res:
-                listA.append('-')
-            else:
-                listA.append(res[0])
-            list_t.append(res2[0])
-        return listA,list_t
-
-    def __re_quote_jndzf(self, content):
-        """
-        使用xpath匹配基金的季度/年涨幅
-        :param content: 网页内容，需要解析的
-        :return:
-        """
-        html = etree.HTML(content)
-        xpath_rules = {
-            1: '//*[@id="quarterzftable"]/table/tbody/tr[1]/td[2]/text()',   # 季度涨幅 td+
-            2: '//*[@id="yearzftable"]/table/tbody/tr[1]/td[2]/text()',   # 年度涨幅 td+
-            3: '//*[@id="quarterzftable"]/table/thead/tr/th[2]/text()',   # 季度标题 th+
-            4: '//*[@id="yearzftable"]/table/thead/tr/th[2]/text()'   # 年度标题 th+
-        }
-
-        # 最近8个季度的涨幅
-        listA = []
-        list_t = []
-        for i in range(8):
-            res = html.xpath(xpath_rules[1].replace('td[2]',f"td[{i+2}]"))
-            res2 = html.xpath(xpath_rules[3].replace('th[2]',f"th[{i+2}]"))
-            if not res:
-                listA.append('-')
-            else:
-                listA.append(res[0])
-            list_t.append(res2[0])
-
-        # 最近8年的业绩
-        for i in range(8):
-            res = html.xpath(xpath_rules[2].replace('td[2]',f"td[{i+2}]"))
-            res2 = html.xpath(xpath_rules[4].replace('th[2]',f"th[{i+2}]"))
-            if not res:
-                listA.append('-')
-            else:
-                listA.append(res[0])
-            list_t.append(res2[0])
-
-        return listA,list_t
-
-    def __re_quote_cyrjg(self, content):
-        """
-        使用xpath匹配基金的持有人结构
-        :param content: 网页内容，需要解析的
-        :return:
-        """
-        html = etree.HTML(content)
-        xpath_rules = {
-            1: '//*[@id="cyrjgtable"]/table/tbody/tr[1]/td[1]/text()',   # 只要最近更新的一期结构中 各占比例即可。 日期 机构 个人 内部 总份额 td+
-            2: '//*[@id="cyrjgtable"]/table/thead/tr/th[1]/text()'   # 标题 th+
-
-        }
-
-        listA = []
-        list_t = []
-        for i in range(5):
-            res = html.xpath(xpath_rules[1].replace('td[1]',f"td[{i+1}]"))
-            res2 = html.xpath(xpath_rules[2].replace('th[1]',f"th[{i+1}]"))
-            if not res:
-                listA.append('-')
-            else:
-                listA.append(res[0])
-            list_t.append(res2[0])
-        return listA,list_t
-
 
     def fund_basic_info(self, code: str):
         """
@@ -370,22 +278,19 @@ class libFund(MyLogger):
         :return:
         """
         # 规模变动  http://fundf10.eastmoney.com/gmbd_270002.html
-        content2 = self.__fund_request_by_code(code=code, flag=8, method=1)
+        content1 = self.__fund_request_by_code(code=code, flag=8, method=1)
+        res1,res1_t = self.__re_fund_gmbd(content=content1)
+
         # 基金经理  http://fundf10.eastmoney.com/jjjl_270002.html
         content2 = self.__fund_request_by_code(code=code, flag=9, method=1)
+        res2,res2_t = self.__re_fund_jjjl(content=content2)
 
-        pass
+        res_f= [res1 + res2]
+        res_f_t = res1_t + res2_t
+        df_f = pd.DataFrame(res_f,columns=res_f_t)
+        self.logger.info(df_f)
 
-    def fund_special_info(self, code: str):
-        """
-        基金特殊数据
-        :param code:
-        :param : 1.近1年夏普比率  2.近1年波动率 3.近1年最大回撤 4.近1年最大回撤率
-        :return:
-        """
-        # 特殊数据 http://fundf10.eastmoney.com/tsdata_270002.html
-        content2 = self.__fund_request_by_code(code=code, flag=10, method=1)
-        pass
+        return df_f
 
     def funds_all_list(self,to_file):
         """
@@ -425,6 +330,209 @@ class libFund(MyLogger):
             code_name = re_res[0]
 
         return code_name
+
+    def __re_fund_jdzf(self, content):
+        """
+        使用xpath匹配基金的阶段涨幅
+        :param content: 网页内容，需要解析的
+        :return:
+        """
+        html = etree.HTML(content)
+        xpath_rules = {
+            1: '//*[@id="jdzftable"]/div/ul[2]/li[2]/text()',   # 今年来  近1周  近1，3，6个月  近1，2，3，5年 成立以来 ul+
+            2: '//*[@id="jdzftable"]/div/ul[2]/li[1]/text()'   # 标题 ul+
+        }
+
+        listA = []
+        list_t = []
+        for i in range(10):
+            res = html.xpath(xpath_rules[1].replace('ul[2]',f"ul[{i+2}]"))
+            res2 = html.xpath(xpath_rules[2].replace('ul[2]',f"ul[{i+2}]"))
+            if not res:
+                listA.append('-')
+            else:
+                listA.append(res[0])
+            list_t.append(res2[0])
+        return listA,list_t
+
+    def __re_fund_jndzf(self, content):
+        """
+        使用xpath匹配基金的季度/年涨幅
+        :param content: 网页内容，需要解析的
+        :return:
+        """
+        html = etree.HTML(content)
+        xpath_rules = {
+            1: '//*[@id="quarterzftable"]/table/tbody/tr[1]/td[2]/text()',   # 季度涨幅 td+
+            2: '//*[@id="yearzftable"]/table/tbody/tr[1]/td[2]/text()',   # 年度涨幅 td+
+            3: '//*[@id="quarterzftable"]/table/thead/tr/th[2]/text()',   # 季度标题 th+
+            4: '//*[@id="yearzftable"]/table/thead/tr/th[2]/text()'   # 年度标题 th+
+        }
+
+        # 最近8个季度的涨幅
+        listA = []
+        list_t = []
+        for i in range(8):
+            res = html.xpath(xpath_rules[1].replace('td[2]',f"td[{i+2}]"))
+            res2 = html.xpath(xpath_rules[3].replace('th[2]',f"th[{i+2}]"))
+            if not res:
+                listA.append('-')
+            else:
+                listA.append(res[0])
+            list_t.append(res2[0])
+
+        # 最近8年的业绩
+        for i in range(8):
+            res = html.xpath(xpath_rules[2].replace('td[2]',f"td[{i+2}]"))
+            res2 = html.xpath(xpath_rules[4].replace('th[2]',f"th[{i+2}]"))
+            if not res:
+                listA.append('-')
+            else:
+                listA.append(res[0])
+            list_t.append(res2[0])
+
+        return listA,list_t
+
+    def __re_fund_cyrjg(self, content):
+        """
+        使用xpath匹配基金的持有人结构
+        :param content: 网页内容，需要解析的
+        :return:
+        """
+        html = etree.HTML(content)
+        xpath_rules = {
+            1: '//*[@id="cyrjgtable"]/table/tbody/tr[1]/td[1]/text()',   # 只要最近更新的一期结构中 各占比例即可。 日期 机构 个人 内部 总份额 td+
+            2: '//*[@id="cyrjgtable"]/table/thead/tr/th[1]/text()'   # 标题 th+
+
+        }
+
+        listA = []
+        list_t = []
+        for i in range(5):
+            res = html.xpath(xpath_rules[1].replace('td[1]',f"td[{i+1}]"))
+            res2 = html.xpath(xpath_rules[2].replace('th[1]',f"th[{i+1}]"))
+            if not res:
+                listA.append('-')
+            else:
+                listA.append(res[0])
+            list_t.append(res2[0])
+        return listA,list_t
+
+    def __re_fund_gmbd(self, content):
+        """
+        使用xpath匹配基金的规模变动
+        :param content: 网页内容，需要解析的
+        :return:
+        """
+        html = etree.HTML(content)
+        xpath_rules = {
+            1: '//*[@id="gmbdtable"]/table/tbody/tr[1]/td[5]/text()',   # 最近8期的规模变动 tr+ //*[@id="gmbdtable"]/table/tbody/tr[2]/td[5]
+            2: '//*[@id="gmbdtable"]/table/tbody/tr[1]/td[1]/text()'   # 标题 tr+   //*[@id="gmbdtable"]/table/tbody/tr[2]/td[1]
+
+        }
+
+        listA = []
+        list_t = []
+        # 最近8个季度的规模变动信息
+        for i in range(8):
+            res = html.xpath(xpath_rules[1].replace('tr[1]',f"tr[{i+1}]"))
+            res2 = html.xpath(xpath_rules[2].replace('tr[1]',f"tr[{i+1}]"))
+            if not res:
+                listA.append('-')
+            else:
+                listA.append(res[0])
+            if not res2:
+                list_t.append('-')
+            else:
+                list_t.append(res2[0])
+        return listA,list_t
+
+    def __re_fund_jjjl(self, content):
+        """
+        使用xpath匹配基金的基金经理信息等
+        :param content: 网页内容，需要解析的
+        :return:
+        """
+        html = etree.HTML(content)
+        xpath_rules = {
+            1: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/tbody/tr[1]/td[1]/text()',   # 起始期
+            2: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/tbody/tr[1]/td[2]/text()',  # 截止期
+            3: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/tbody/tr[1]/td[3]/a/text()',  # 基金经理
+            4: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/tbody/tr[1]/td[4]/text()',  # 任职时间
+            5: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/tbody/tr[1]/td[5]/text()',  # 任职回报
+            6: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/thead/tr/th[1]/text()',  # title合集 th+
+            7: '//*[@id="bodydiv"]/div[8]/div[3]/div[1]/div[2]/p/label[3]/text()',  # 基金类型title
+            8: '//*[@id="bodydiv"]/div[8]/div[3]/div[1]/div[2]/p/label[3]/span/text()'  # 基金类型
+        }
+
+        listA = []
+        list_t = []
+        # 最近1个经理任期业绩
+        for i in range(5):
+            res = html.xpath(xpath_rules[i+1])
+            res_t = html.xpath(xpath_rules[6].replace('th[1]', f"th[{i+1}]"))
+            if not res:
+                listA.append('-')
+            else:
+                listA.append(res[0])
+            list_t.append(res_t[0])
+
+        res1 = html.xpath(xpath_rules[7])
+        res2 = html.xpath(xpath_rules[8])
+        res1 = res1[0].replace('：','')
+        listA.append(res2[0])
+        list_t.append(res1)
+
+        return listA,list_t
+
+    def fund_special_info(self, code: str):
+        """
+        基金特色数据
+        :param code:
+        :param : 1.近1年夏普比率  2.近1年波动率 3.近1年最大回撤 4.近1年最大回撤率
+        :return:
+        """
+        # 特殊数据 http://fundf10.eastmoney.com/tsdata_270002.html
+        content1 = self.__fund_request_by_code(code=code, flag=10, method=1)
+        res1,res1_t = self.__re_fund_tsdata(content=content1)
+
+        res_f = [res1]
+        df_f = pd.DataFrame(res_f, columns=res1_t)
+        self.logger.info(df_f)
+
+        return df_f
+
+    def __re_fund_tsdata(self, content):
+        """
+        使用xpath匹配基金的基金经理信息等
+        :param content: 网页内容，需要解析的
+        :return:
+        """
+        html = etree.HTML(content)
+        xpath_rules = {
+            1: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/div[4]/table/tbody/tr[2]/td[2]/text()',   # 近1年标注差
+            2: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/div[4]/table/tbody/tr[3]/td[2]/text()',  # 近1年夏普率
+            3: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/div[4]/table/tbody/tr[2]/td[1]/text()',  # 标准差 title td
+            4: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/div[4]/table/tbody/tr[3]/td[1]/text()',  # 夏普率
+        }
+
+        listA = []
+        list_t = []
+        # 最近1个经理任期业绩
+        for i in range(2):
+            res = html.xpath(xpath_rules[i+1])
+            if not res:
+                listA.append('-')
+            else:
+                listA.append(res[0])
+        for i in range(2):
+            res_t = html.xpath(xpath_rules[i+3])
+            if not res_t:
+                list_t.append('-')
+            else:
+                list_t.append(res_t[0])
+
+        return listA,list_t
 
     def __funds_list(self):
         """
@@ -691,3 +799,7 @@ if __name__ == "__main__":
     # ff.funds_all_list(to_file=0)
     # 历史各种涨幅数据
     sss = ff.fund_his_rates('270002')
+    # 规模变动信息+基金经理任期管理信息 + 类型
+    sss2 = ff.fund_basic_info('270002')
+    # 基金特色数据
+    sss3 = ff.fund_special_info('270002')
