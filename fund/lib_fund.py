@@ -292,9 +292,26 @@ class libFund(MyLogger):
 
         return df_f
 
+    def fund_special_info(self, code: str):
+        """
+        基金特色数据
+        :param code:
+        :param : 1.近1年夏普比率  2.近1年波动率 3.近1年最大回撤 4.近1年最大回撤率
+        :return:
+        """
+        # 特殊数据 http://fundf10.eastmoney.com/tsdata_270002.html
+        content1 = self.__fund_request_by_code(code=code, flag=10, method=1)
+        res1,res1_t = self.__re_fund_tsdata(content=content1)
+
+        res_f = [res1]
+        df_f = pd.DataFrame(res_f, columns=res1_t)
+        self.logger.info(df_f)
+
+        return df_f
+
     def funds_all_list(self,to_file):
         """
-        市场上所有等基金列表,存入xlsx
+        只取市场上所有开放基金的列表,存入xlsx
         :param to_file:是否写入xlsx文件
         :return:
         """
@@ -305,7 +322,7 @@ class libFund(MyLogger):
         }
 
         re_res2 = re.findall(re_rule[2],str(resp))
-        lpd = pd.DataFrame(re_res2,columns=['code','name','tpye'])
+        lpd = pd.DataFrame(re_res2,columns=['code','name','type'])
         if to_file == 1:
             lpd.to_excel('all_funds.xlsx',index=False)
             self.logger.info(f"all_funds write to xlsx file finish.")
@@ -460,14 +477,12 @@ class libFund(MyLogger):
             3: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/tbody/tr[1]/td[3]/a/text()',  # 基金经理
             4: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/tbody/tr[1]/td[4]/text()',  # 任职时间
             5: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/tbody/tr[1]/td[5]/text()',  # 任职回报
-            6: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/thead/tr/th[1]/text()',  # title合集 th+
-            7: '//*[@id="bodydiv"]/div[8]/div[3]/div[1]/div[2]/p/label[3]/text()',  # 基金类型title
-            8: '//*[@id="bodydiv"]/div[8]/div[3]/div[1]/div[2]/p/label[3]/span/text()'  # 基金类型
+            6: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/thead/tr/th[1]/text()'   # title合集 th+
         }
 
         listA = []
         list_t = []
-        # 最近1个经理任期业绩
+        # 最近1个经理任期业绩 5项数据
         for i in range(5):
             res = html.xpath(xpath_rules[i+1])
             res_t = html.xpath(xpath_rules[6].replace('th[1]', f"th[{i+1}]"))
@@ -477,30 +492,7 @@ class libFund(MyLogger):
                 listA.append(res[0])
             list_t.append(res_t[0])
 
-        res1 = html.xpath(xpath_rules[7])
-        res2 = html.xpath(xpath_rules[8])
-        res1 = res1[0].replace('：','')
-        listA.append(res2[0])
-        list_t.append(res1)
-
         return listA,list_t
-
-    def fund_special_info(self, code: str):
-        """
-        基金特色数据
-        :param code:
-        :param : 1.近1年夏普比率  2.近1年波动率 3.近1年最大回撤 4.近1年最大回撤率
-        :return:
-        """
-        # 特殊数据 http://fundf10.eastmoney.com/tsdata_270002.html
-        content1 = self.__fund_request_by_code(code=code, flag=10, method=1)
-        res1,res1_t = self.__re_fund_tsdata(content=content1)
-
-        res_f = [res1]
-        df_f = pd.DataFrame(res_f, columns=res1_t)
-        self.logger.info(df_f)
-
-        return df_f
 
     def __re_fund_tsdata(self, content):
         """
@@ -762,14 +754,14 @@ class libFund(MyLogger):
 
     def db_save(self):
         """
-        保存到DB数据库
+        dataframe格式基金数据保存到DB数据库
         :return:
         """
         pass
 
     def db_read(self):
         """
-        从DB读取数据
+        从DB读取某项数据
         :return:
         """
         pass
@@ -784,22 +776,39 @@ class libFund(MyLogger):
 
 
 if __name__ == "__main__":
-    fund_code_list = ['512000', '270002']  # ,'000478','110035','001210','008488','001938','002621']
+    fund_code_list = ['512000', '270002']
     ff = libFund(level=logging.INFO)
-    # 获取基金列表的实时涨跌幅
+    # # 实时数据不作处理
+    # # 获取基金列表的实时涨跌幅
     # ff.fund_current_jjjz()
-    # 获取基金列表的持有收益率
+    # #获取基金列表的持有收益率
     # ff.fund_rate_estimate()
     # # 获取基金列表的持有总金额和持有收益金额,实时估算收益
     # ff.fund_hold_info
+    #
+    # # 净值数据-
     # # 获取单个基金的历史几天的 单位净值 历史净值 日收益率
     # ff.fund_history_jjjz('512000', 1)
-    # # 获取单个基金的股票持仓情况及股票实时的涨跌幅
-    # ff.fund_hold_shares('270002')
-    # ff.funds_all_list(to_file=0)
-    # 历史各种涨幅数据
-    sss = ff.fund_his_rates('270002')
-    # 规模变动信息+基金经理任期管理信息 + 类型
+
+    # 可以存 xlsx和 DB
+    # 格式：名称 代码 类型 xxx xxx ...
+    # 全部基金列表: 名字 代码 类型 columns=['code','name','tpye']
+    all_list = ff.funds_all_list(to_file=0)
+    # for row in all_list.itertuples():
+    #     print(getattr(row,'code'))
+    #     print(getattr(row,'name'))
+    #     print(getattr(row,'type'))
+    print(all_list['name'][0])
+    # 历史各种涨幅数据 : 共31项 1-阶段涨幅(10项) 2-季度涨幅(8个季度) 3-年度涨幅(8年) 4-持有人结构(最近一期的5项数据)
+    sss1 = ff.fund_his_rates('270002')
+    # 基础信息 : 规模变动信息（8个季度） + 基金经理任期管理信息（5项数据）
     sss2 = ff.fund_basic_info('270002')
-    # 基金特色数据
+    # 基金特色数据: 波动+夏普。
     sss3 = ff.fund_special_info('270002')
+
+    sss4 = pd.concat([sss1,sss2,sss3])
+    sss4.to_excel("sss4.xlsx")
+
+
+
+
