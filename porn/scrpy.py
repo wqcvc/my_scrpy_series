@@ -463,6 +463,8 @@ class My91DownLoad(MyLogger):
                 tittle_tmp = html.xpath('//*[@id="videodetails"]/h4/text()')
                 temp_t = tittle_tmp[0].replace('\n', '')
                 tittle_f = temp_t.replace(' ', '')
+                rstr = r"[\/\\\:\*\?\"\<\>\|]"  # '/ \ : * ? " < > |'
+                tittle_f = re.sub(rstr, "_", tittle_f)  # 替换为下划线
                 self.logger.info(f"获取到的tiltle是:[{tittle_f}]")
                 video_f = asyncio.get_event_loop().run_until_complete(self.__pyppeteeer_newget(subpage_url=listB[i]))
 

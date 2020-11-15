@@ -14,7 +14,7 @@ from pyppeteer import launch
 from time import time
 from lib_logger import MyLogger
 import logging
-
+import asyncio
 
 
 class libScrpy(MyLogger):
@@ -51,9 +51,9 @@ class libScrpy(MyLogger):
         if resp.status_code != 200:
             self.logger.info(f"Error url response status_code:{resp.status_code}")
             return
-
         end_time = time()
         self.logger.info(f"this request cost seconds:{end_time - start_time}")
+
         return resp.text
 
     async def pyppeteer_method(self, url):
@@ -87,16 +87,15 @@ class libScrpy(MyLogger):
         page = await browser.newPage()
         await page.evaluateOnNewDocument('() =>{ Object.defineProperties(navigator,'
                                          '{ webdriver:{ get: () => false } }) }')
-        resp = await page.goto(url=url, timeout=10000)
+        resp = await page.goto(url=url, timeout=30000)
         self.logger.info(f"resp.status code:{resp.status}")
         if resp.status != 200:
             self.logger.info(f"Error resp.status code: {resp.status}.")
-            return None
+            return
         text = await page.content()
         await browser.close()
         end_time = time()
         self.logger.info(f"this request cost seconds:{end_time - start_time}")
-
         return text
 
     def selenium_method(self,url: str):
@@ -122,8 +121,10 @@ class libScrpy(MyLogger):
         """
         pass
 
-# if __name__ == "__main__":
-#     scrpp=libScrpy()
-#     resp=scrpp.fund_request_by_code('512000',1)
-#     # resp=scrpp.fund_request_by_code('512000')
+if __name__ == "__main__":
+    scrpp = libScrpy()
+    resp=scrpp.request_method(url='http://fundf10.eastmoney.com/tsdata_000002.html')
+    # resp = asyncio.get_event_loop().run_until_complete(scrpp.pyppeteer_method(url='http://fundf10.eastmoney.com/tsdata_000002.html'))
+    print(resp)
+    # resp=scrpp.fund_request_by_code('512000')
 

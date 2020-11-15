@@ -21,6 +21,8 @@ import inspect
 import ast
 import asyncio
 import pandas as pd
+import threading
+import os
 
 
 # 装饰器:执行时间统计
@@ -84,7 +86,7 @@ class libFund(MyLogger):
     _history_jjjz_url = 'http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code=xxx&per=ddd&page=ppp'
     _quote_hold_url = 'http://fundf10.eastmoney.com/ccmx_xxx.html'
 
-    _current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+    _current_time = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
     _current_day = datetime.datetime.now().strftime('%Y%m%d')
 
     def __init__(self, fund_code_list: list = None, level=logging.INFO):
@@ -103,7 +105,7 @@ class libFund(MyLogger):
                 self.fund_list.append(v['code'])
         # 基金名称 基金涨跌幅 估算净值 前日净值
         list_tmp = self.fund_current_jjjz()
-        self.name, self.gszzl, self.gsz, self.dwjz = [],[],[],[]
+        self.name, self.gszzl, self.gsz, self.dwjz = [], [], [], []
         for i in range(len(self.fund_list)):
             self.name.append(list_tmp[i][0])
             self.gszzl.append(list_tmp[i][1])
@@ -154,7 +156,7 @@ class libFund(MyLogger):
         """
         dict1 = self.__json_to_dict()
 
-        codes, costs, numbers= [],[],[]
+        codes, costs, numbers = [], [], []
         for k, v in dict1.items():
             codes.append(v['code'])
             costs.append(v['cost'])
@@ -218,7 +220,7 @@ class libFund(MyLogger):
             rates_in_day += float(hisjz_list[i][3])
 
         # 转换为 Dataframe 格式
-        df_hisjz = pd.DataFrame(hisjz_list,columns=['净值日期', '单位净值', '累计净值', '日增长率'])
+        df_hisjz = pd.DataFrame(hisjz_list, columns=['净值日期', '单位净值', '累计净值', '日增长率'])
         # df_hisjz.to_excel('xxx1.xlsx',index=False)
 
         self.logger.info(df_hisjz)
@@ -242,7 +244,7 @@ class libFund(MyLogger):
 
         return quote_info_list
 
-    def fund_his_rates(self, code: str):
+    def fund_his_rates(self, code: list):
         """
 
         :param code: 基金代码
@@ -253,46 +255,54 @@ class libFund(MyLogger):
         # 季度年涨幅  http://fundf10.eastmoney.com/jndzf_270002.html
         # 持有人结构  http://fundf10.eastmoney.com/cyrjg_270002.html
 
-        #阶段涨幅
-        content1 = self.__fund_request_by_code(code=code, flag=5, method=1)
-        res1,res1_t = self.__re_fund_jdzf(content=content1)
-        #季度/年涨幅
-        content2 = self.__fund_request_by_code(code=code, flag=6, method=1)
-        res2,res2_t = self.__re_fund_jndzf(content=content2)
-        # 持有人结构
-        content3 = self.__fund_request_by_code(code=code, flag=7, method=1)
-        res3,res3_t = self.__re_fund_cyrjg(content=content3)
+        res4_f = []
+        for i in range(len(code)):
+            # 阶段涨幅
+            content1 = self.__fund_request_by_code(code=code[i], flag=5, method=1)
+            res1 = self.__re_fund_jdzf(content=content1)
+            res1_t = self.__re_fund_jdzf_title(content=content1)
+            # 季度/年涨幅
+            content2 = self.__fund_request_by_code(code=code[i], flag=6, method=1)
+            res2 = self.__re_fund_jndzf(content=content2)
+            res2_t = self.__re_fund_jndzf_title(content=content2)
+            # 持有人结构
+            content3 = self.__fund_request_by_code(code=code[i], flag=7, method=1)
+            res3 = self.__re_fund_cyrjg(content=content3)
+            res3_t = self.__re_fund_cyrjg_title(content=content3)
+            res4_f.append(res1 + res2 + res3)
 
         res_f_t = res1_t + res2_t + res3_t
-        res_f = [res1 + res2 + res3]
-        df_f = pd.DataFrame(res_f,columns=res_f_t)
-        self.logger.info(df_f)
-        # df_f.to_excel("xs.xlsx")
+        df_f = pd.DataFrame(res4_f, columns=res_f_t)
+        df_f.to_excel("fund_his_rates.xlsx")
         return df_f
 
-    def fund_basic_info(self, code: str):
+    def fund_basic_info(self, code: list):
         """
         基金规模数据+基金经理信息
         :param code:
         :param : 1.规模+规模增长数据 2.基金经理个人,管理规模,业绩等信息
         :return:
         """
-        # 规模变动  http://fundf10.eastmoney.com/gmbd_270002.html
-        content1 = self.__fund_request_by_code(code=code, flag=8, method=1)
-        res1,res1_t = self.__re_fund_gmbd(content=content1)
+        res_f = []
+        for i in range(len(code)):
+            # 规模变动  http://fundf10.eastmoney.com/gmbd_270002.html
+            content1 = self.__fund_request_by_code(code=code[i], flag=8, method=1)
+            res1 = self.__re_fund_gmbd(content=content1)
+            res1_t = self.__re_fund_gmbd_title(content=content1)
 
-        # 基金经理  http://fundf10.eastmoney.com/jjjl_270002.html
-        content2 = self.__fund_request_by_code(code=code, flag=9, method=1)
-        res2,res2_t = self.__re_fund_jjjl(content=content2)
+            # 基金经理  http://fundf10.eastmoney.com/jjjl_270002.html
+            content2 = self.__fund_request_by_code(code=code[i], flag=9, method=1)
+            res2 = self.__re_fund_jjjl(content=content2)
+            res2_t = self.__re_fund_jjjl_title(content=content2)
+            res_f.append(res1 + res2)
 
-        res_f= [res1 + res2]
         res_f_t = res1_t + res2_t
-        df_f = pd.DataFrame(res_f,columns=res_f_t)
+        df_f = pd.DataFrame(res_f, columns=res_f_t)
         self.logger.info(df_f)
-
+        df_f.to_excel("fund_basic_info.xlsx")
         return df_f
 
-    def fund_special_info(self, code: str):
+    def fund_special_info(self, code: list):
         """
         基金特色数据
         :param code:
@@ -300,16 +310,20 @@ class libFund(MyLogger):
         :return:
         """
         # 特殊数据 http://fundf10.eastmoney.com/tsdata_270002.html
-        content1 = self.__fund_request_by_code(code=code, flag=10, method=1)
-        res1,res1_t = self.__re_fund_tsdata(content=content1)
+        res_f = []
+        for i in range(len(code)):
+            content1 = self.__fund_request_by_code(code=code[i], flag=10, method=1)
+            res1 = self.__re_fund_tsdata(content=content1)
+            res1_t = self.__re_fund_tsdata_title(content=content1)
+            res_f.append(res1)
 
-        res_f = [res1]
         df_f = pd.DataFrame(res_f, columns=res1_t)
         self.logger.info(df_f)
+        df_f.to_excel("fund_special_info.xlsx")
 
         return df_f
 
-    def funds_all_list(self,to_file):
+    def funds_all_list(self, to_file: int = 0):
         """
         只取市场上所有开放基金的列表,存入xlsx
         :param to_file:是否写入xlsx文件
@@ -321,10 +335,10 @@ class libFund(MyLogger):
             2: "\"(.*?)\",\".*?\",\"(.*?)\",\"(.*?)\",\".*?\""
         }
 
-        re_res2 = re.findall(re_rule[2],str(resp))
-        lpd = pd.DataFrame(re_res2,columns=['code','name','type'])
+        re_res2 = re.findall(re_rule[2], str(resp))
+        lpd = pd.DataFrame(re_res2, columns=['基金代码', '基金名称', '类型'])
         if to_file == 1:
-            lpd.to_excel('all_funds.xlsx',index=False)
+            lpd.to_excel('all_funds.xlsx', index=False)
             self.logger.info(f"all_funds write to xlsx file finish.")
         else:
             pass
@@ -342,7 +356,7 @@ class libFund(MyLogger):
         re_rule = {
             1: "\"xxxxxx\",\".*?\",\"(.*?)\","
         }
-        re_res= re.findall(re_rule[1].replace('xxxxxx', code), str(resp))
+        re_res = re.findall(re_rule[1].replace('xxxxxx', code), str(resp))
         if re_res[0]:
             code_name = re_res[0]
 
@@ -354,23 +368,44 @@ class libFund(MyLogger):
         :param content: 网页内容，需要解析的
         :return:
         """
+        if content is None:
+            return
         html = etree.HTML(content)
         xpath_rules = {
-            1: '//*[@id="jdzftable"]/div/ul[2]/li[2]/text()',   # 今年来  近1周  近1，3，6个月  近1，2，3，5年 成立以来 ul+
-            2: '//*[@id="jdzftable"]/div/ul[2]/li[1]/text()'   # 标题 ul+
+            1: '//*[@id="jdzftable"]/div/ul[2]/li[2]/text()',  # 今年来  近1周  近1，3，6个月  近1，2，3，5年 成立以来 ul+
+            2: '//*[@id="jdzftable"]/div/ul[2]/li[1]/text()'  # 标题 ul+
         }
 
         listA = []
-        list_t = []
         for i in range(10):
-            res = html.xpath(xpath_rules[1].replace('ul[2]',f"ul[{i+2}]"))
-            res2 = html.xpath(xpath_rules[2].replace('ul[2]',f"ul[{i+2}]"))
+            res = html.xpath(xpath_rules[1].replace('ul[2]', f"ul[{i + 2}]"))
             if not res:
                 listA.append('-')
             else:
                 listA.append(res[0])
-            list_t.append(res2[0])
-        return listA,list_t
+        return listA
+
+    def __re_fund_jdzf_title(self, content):
+        """
+        使用xpath匹配基金的阶段涨幅
+        :param content: 网页内容，需要解析的
+        :return:
+        """
+        if content is None:
+            return
+        html = etree.HTML(content)
+        xpath_rules = {
+            2: '//*[@id="jdzftable"]/div/ul[2]/li[1]/text()'  # 标题 ul+
+        }
+
+        list_t = []
+        for i in range(10):
+            res2 = html.xpath(xpath_rules[2].replace('ul[2]', f"ul[{i + 2}]"))
+            if not res2:
+                list_t.append('-')
+            else:
+                list_t.append(res2[0])
+        return list_t
 
     def __re_fund_jndzf(self, content):
         """
@@ -378,37 +413,61 @@ class libFund(MyLogger):
         :param content: 网页内容，需要解析的
         :return:
         """
+        if content is None:
+            return
         html = etree.HTML(content)
         xpath_rules = {
-            1: '//*[@id="quarterzftable"]/table/tbody/tr[1]/td[2]/text()',   # 季度涨幅 td+
-            2: '//*[@id="yearzftable"]/table/tbody/tr[1]/td[2]/text()',   # 年度涨幅 td+
-            3: '//*[@id="quarterzftable"]/table/thead/tr/th[2]/text()',   # 季度标题 th+
-            4: '//*[@id="yearzftable"]/table/thead/tr/th[2]/text()'   # 年度标题 th+
+            1: '//*[@id="quarterzftable"]/table/tbody/tr[1]/td[2]/text()',  # 季度涨幅 td+
+            2: '//*[@id="yearzftable"]/table/tbody/tr[1]/td[2]/text()'  # 年度涨幅 td+
         }
 
         # 最近8个季度的涨幅
         listA = []
-        list_t = []
         for i in range(8):
-            res = html.xpath(xpath_rules[1].replace('td[2]',f"td[{i+2}]"))
-            res2 = html.xpath(xpath_rules[3].replace('th[2]',f"th[{i+2}]"))
+            res = html.xpath(xpath_rules[1].replace('td[2]', f"td[{i + 2}]"))
             if not res:
                 listA.append('-')
             else:
                 listA.append(res[0])
-            list_t.append(res2[0])
 
         # 最近8年的业绩
         for i in range(8):
-            res = html.xpath(xpath_rules[2].replace('td[2]',f"td[{i+2}]"))
-            res2 = html.xpath(xpath_rules[4].replace('th[2]',f"th[{i+2}]"))
+            res = html.xpath(xpath_rules[2].replace('td[2]', f"td[{i + 2}]"))
             if not res:
                 listA.append('-')
             else:
                 listA.append(res[0])
-            list_t.append(res2[0])
 
-        return listA,list_t
+        return listA
+
+    def __re_fund_jndzf_title(self, content):
+        """
+        使用xpath匹配基金的季度/年涨幅
+        :param content: 网页内容，需要解析的
+        :return:
+        """
+        if content is None:
+            return
+        html = etree.HTML(content)
+        xpath_rules = {
+            3: '//*[@id="quarterzftable"]/table/thead/tr/th[2]/text()',  # 季度标题 th+
+            4: '//*[@id="yearzftable"]/table/thead/tr/th[2]/text()'  # 年度标题 th+
+        }
+        list_t = []
+        for i in range(8):
+            res2 = html.xpath(xpath_rules[3].replace('th[2]', f"th[{i + 2}]"))
+            if not res2:
+                list_t.append('-')
+            else:
+                list_t.append(res2[0])
+        for i in range(8):
+            res2 = html.xpath(xpath_rules[4].replace('th[2]', f"th[{i + 2}]"))
+            if not res2:
+                list_t.append('-')
+            else:
+                list_t.append(res2[0])
+
+        return list_t
 
     def __re_fund_cyrjg(self, content):
         """
@@ -416,24 +475,45 @@ class libFund(MyLogger):
         :param content: 网页内容，需要解析的
         :return:
         """
+        if content is None:
+            return
         html = etree.HTML(content)
         xpath_rules = {
-            1: '//*[@id="cyrjgtable"]/table/tbody/tr[1]/td[1]/text()',   # 只要最近更新的一期结构中 各占比例即可。 日期 机构 个人 内部 总份额 td+
-            2: '//*[@id="cyrjgtable"]/table/thead/tr/th[1]/text()'   # 标题 th+
-
+            1: '//*[@id="cyrjgtable"]/table/tbody/tr[1]/td[1]/text()',  # 只要最近更新的一期结构中 各占比例即可。 日期 机构 个人 内部 总份额 td+
         }
 
         listA = []
-        list_t = []
         for i in range(5):
-            res = html.xpath(xpath_rules[1].replace('td[1]',f"td[{i+1}]"))
-            res2 = html.xpath(xpath_rules[2].replace('th[1]',f"th[{i+1}]"))
+            res = html.xpath(xpath_rules[1].replace('td[1]', f"td[{i + 1}]"))
             if not res:
                 listA.append('-')
             else:
                 listA.append(res[0])
-            list_t.append(res2[0])
-        return listA,list_t
+
+        return listA
+
+    def __re_fund_cyrjg_title(self, content):
+        """
+        使用xpath匹配基金的持有人结构
+        :param content: 网页内容，需要解析的
+        :return:
+        """
+        if content is None:
+            return
+        html = etree.HTML(content)
+        xpath_rules = {
+            2: '//*[@id="cyrjgtable"]/table/thead/tr/th[1]/text()'  # 标题 th+
+
+        }
+
+        list_t = []
+        for i in range(5):
+            res2 = html.xpath(xpath_rules[2].replace('th[1]', f"th[{i + 1}]"))
+            if not res2:
+                list_t.append('-')
+            else:
+                list_t.append(res2[0])
+        return list_t
 
     def __re_fund_gmbd(self, content):
         """
@@ -441,28 +521,47 @@ class libFund(MyLogger):
         :param content: 网页内容，需要解析的
         :return:
         """
+        if content is None:
+            return
         html = etree.HTML(content)
         xpath_rules = {
-            1: '//*[@id="gmbdtable"]/table/tbody/tr[1]/td[5]/text()',   # 最近8期的规模变动 tr+ //*[@id="gmbdtable"]/table/tbody/tr[2]/td[5]
-            2: '//*[@id="gmbdtable"]/table/tbody/tr[1]/td[1]/text()'   # 标题 tr+   //*[@id="gmbdtable"]/table/tbody/tr[2]/td[1]
-
+            1: '//*[@id="gmbdtable"]/table/tbody/tr[1]/td[5]/text()',
+            # 最近8期的规模变动 tr+ //*[@id="gmbdtable"]/table/tbody/tr[2]/td[5]
         }
 
         listA = []
-        list_t = []
         # 最近8个季度的规模变动信息
         for i in range(8):
-            res = html.xpath(xpath_rules[1].replace('tr[1]',f"tr[{i+1}]"))
-            res2 = html.xpath(xpath_rules[2].replace('tr[1]',f"tr[{i+1}]"))
+            res = html.xpath(xpath_rules[1].replace('tr[1]', f"tr[{i + 1}]"))
             if not res:
                 listA.append('-')
             else:
                 listA.append(res[0])
+        return listA
+
+    def __re_fund_gmbd_title(self, content):
+        """
+        使用xpath匹配基金的规模变动
+        :param content: 网页内容，需要解析的
+        :return:
+        """
+        if content is None:
+            return
+        html = etree.HTML(content)
+        xpath_rules = {
+            2: '//*[@id="gmbdtable"]/table/tbody/tr[1]/td[1]/text()'
+            # 标题 tr+   //*[@id="gmbdtable"]/table/tbody/tr[2]/td[1]
+        }
+
+        list_t = []
+        # 最近8个季度的规模变动信息
+        for i in range(8):
+            res2 = html.xpath(xpath_rules[2].replace('tr[1]', f"tr[{i + 1}]"))
             if not res2:
                 list_t.append('-')
             else:
                 list_t.append(res2[0])
-        return listA,list_t
+        return list_t
 
     def __re_fund_jjjl(self, content):
         """
@@ -470,29 +569,59 @@ class libFund(MyLogger):
         :param content: 网页内容，需要解析的
         :return:
         """
+        if content is None:
+            return
         html = etree.HTML(content)
         xpath_rules = {
-            1: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/tbody/tr[1]/td[1]/text()',   # 起始期
+            1: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/tbody/tr[1]/td[1]/text()',  # 起始期
             2: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/tbody/tr[1]/td[2]/text()',  # 截止期
             3: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/tbody/tr[1]/td[3]/a/text()',  # 基金经理
             4: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/tbody/tr[1]/td[4]/text()',  # 任职时间
             5: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/tbody/tr[1]/td[5]/text()',  # 任职回报
-            6: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/thead/tr/th[1]/text()'   # title合集 th+
+            6: '//*[@id="bodydiv"]/div[8]/div[3]/div[1]/div[2]/p/label[1]/span/text()'  # 基金成立日期
         }
 
         listA = []
-        list_t = []
-        # 最近1个经理任期业绩 5项数据
-        for i in range(5):
-            res = html.xpath(xpath_rules[i+1])
-            res_t = html.xpath(xpath_rules[6].replace('th[1]', f"th[{i+1}]"))
+        # 最近1个经理任期业绩 6项数据
+        for i in range(6):
+            res = html.xpath(xpath_rules[i + 1])
             if not res:
                 listA.append('-')
             else:
                 listA.append(res[0])
-            list_t.append(res_t[0])
 
-        return listA,list_t
+        return listA
+
+    def __re_fund_jjjl_title(self, content):
+        """
+        使用xpath匹配基金的基金经理信息等
+        :param content: 网页内容，需要解析的
+        :return:
+        """
+        if content is None:
+            return
+        html = etree.HTML(content)
+        xpath_rules = {
+            6: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/thead/tr/th[1]/text()',  # 标题
+            7: '//*[@id="bodydiv"]/div[8]/div[3]/div[1]/div[2]/p/label[1]/text()'  # 成立日期标题
+        }
+
+        list_t = []
+        # 最近1个经理任期业绩 5项数据标题 + 成立日期标题
+        for i in range(5):
+            res_t = html.xpath(xpath_rules[6].replace('th[1]', f"th[{i + 1}]"))
+            if not res_t:
+                list_t.append('-')
+            else:
+                list_t.append(res_t[0])
+        res_t2 = html.xpath(xpath_rules[7])
+        if res_t2:
+            res_t2 = res_t2[0].replace('：', '')
+            list_t.append(res_t2)
+        else:
+            list_t.append('-')
+
+        return list_t
 
     def __re_fund_tsdata(self, content):
         """
@@ -500,31 +629,48 @@ class libFund(MyLogger):
         :param content: 网页内容，需要解析的
         :return:
         """
+        if content is None:
+            return ['-','-']
         html = etree.HTML(content)
         xpath_rules = {
-            1: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/div[4]/table/tbody/tr[2]/td[2]/text()',   # 近1年标注差
-            2: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/div[4]/table/tbody/tr[3]/td[2]/text()',  # 近1年夏普率
-            3: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/div[4]/table/tbody/tr[2]/td[1]/text()',  # 标准差 title td
-            4: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/div[4]/table/tbody/tr[3]/td[1]/text()',  # 夏普率
+            1: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/div[4]/table/tbody/tr[2]/td[2]/text()',
+            # 近1年标注差
+            2: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/div[4]/table/tbody/tr[3]/td[2]/text()',
+            # 近1年夏普率
         }
-
         listA = []
-        list_t = []
         # 最近1个经理任期业绩
-        for i in range(2):
-            res = html.xpath(xpath_rules[i+1])
+        for i in range(len(xpath_rules)):
+            res = html.xpath(xpath_rules[i + 1])
             if not res:
                 listA.append('-')
             else:
                 listA.append(res[0])
-        for i in range(2):
-            res_t = html.xpath(xpath_rules[i+3])
+        return listA
+
+    def __re_fund_tsdata_title(self, content):
+        """
+        使用xpath匹配基金的基金经理信息等
+        :param content: 网页内容，需要解析的
+        :return:
+        """
+        if content is None:
+            return ['-','-']
+        html = etree.HTML(content)
+        xpath_rules = {
+            3: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/div[4]/table/tbody/tr[2]/td[1]/text()',
+            # 标准差 title td
+            4: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/div[4]/table/tbody/tr[3]/td[1]/text()',
+            # 夏普率
+        }
+        list_t = []
+        for i in range(len(xpath_rules)):
+            res_t = html.xpath(xpath_rules[i + 3])
             if not res_t:
                 list_t.append('-')
             else:
                 list_t.append(res_t[0])
-
-        return listA,list_t
+        return list_t
 
     def __funds_list(self):
         """
@@ -536,6 +682,7 @@ class libFund(MyLogger):
         resp = self.scrpy.request_method(url)
         return resp
 
+    @retry(2,5)
     def __fund_request_by_code(self, code: str, flag: int = 1, method: int = 0, **kwargs):
         """
         通过传入基金code的方式根据功能自动拼接url获取数据
@@ -604,22 +751,22 @@ class libFund(MyLogger):
             fund_url = self._current_jjjz_url.replace('xxx', code)
         elif flag == 3:  # 历史净值rul
             if kwargs['day']:
-                fund_url = self._history_jjjz_url.replace('xxx', code).replace('ddd', str(kwargs['day'])).\
-                    replace('ppp',str(kwargs['page']))
+                fund_url = self._history_jjjz_url.replace('xxx', code).replace('ddd', str(kwargs['day'])). \
+                    replace('ppp', str(kwargs['page']))
         elif flag == 4:  # 基金股票持仓url
             fund_url = self._quote_hold_url.replace('xxx', code)
         elif flag == 5:  # 阶段涨幅
-            fund_url = self._quote_hold_url.replace('ccmx_xxx','jdzf_' + code)
+            fund_url = self._quote_hold_url.replace('ccmx_xxx', 'jdzf_' + code)
         elif flag == 6:  # 季度/年涨幅    _quote_hold_url = 'http://fundf10.eastmoney.com/ccmx_xxx.html'
-            fund_url = self._quote_hold_url.replace('ccmx_xxx','jndzf_' + code)
+            fund_url = self._quote_hold_url.replace('ccmx_xxx', 'jndzf_' + code)
         elif flag == 7:  # 持有人结构
-            fund_url = self._quote_hold_url.replace('ccmx_xxx','cyrjg_' + code)
+            fund_url = self._quote_hold_url.replace('ccmx_xxx', 'cyrjg_' + code)
         elif flag == 8:  # 规模+规模变动
-            fund_url = self._quote_hold_url.replace('ccmx_xxx','gmbd_' + code)
+            fund_url = self._quote_hold_url.replace('ccmx_xxx', 'gmbd_' + code)
         elif flag == 9:  # 基金经理
-            fund_url = self._quote_hold_url.replace('ccmx_xxx','jjjl_' + code)
+            fund_url = self._quote_hold_url.replace('ccmx_xxx', 'jjjl_' + code)
         elif flag == 10:  # 特色数据
-            fund_url = self._quote_hold_url.replace('ccmx_xxx','tsdata_' + code)
+            fund_url = self._quote_hold_url.replace('ccmx_xxx', 'tsdata_' + code)
         else:
             self.logger.info("Unknown flag number,cant combine url.")
         self.logger.debug(f"__url_combine url:{fund_url}")
@@ -707,15 +854,44 @@ class libFund(MyLogger):
         """
         pass
 
-    def list_to_dframe(self, la: list, index: list):
+    @timer
+    def funds_full_info(self):
+        """
+        所有基金相关信息统一函数：统一请求，方便进行多线程
+        @return:
+        """
+        la = self.funds_all_list()
+        code_list = la['基金代码'].tolist()
+        # print(code_list[0:25],type(code_list),len(code_list))
+        code_list = code_list[0:2]
+        la = la[0:2]
+        df_1 = self.fund_his_rates(code_list)
+        df_2 = self.fund_basic_info(code_list)
+        df_3 = self.fund_special_info(code_list)
+        # 合并数据写入xlsx
+        fal = pd.concat([la, df_1, df_2, df_3], axis=1)
+        # excel_name = 'funds_full_info_' + self._current_time + '.csv'
+        xlsx_name = 'funds_full_info.xlsx'
+        if not os.path.exists(xlsx_name):
+            self.logger.info(f"first write..")
+            fal.to_excel(xlsx_name, index=False)
+        else:
+            self.logger.info(f"read_excel and append")
+            pdf = pd.read_excel(xlsx_name)
+            ss = fal.iloc[:50]
+            pdf.append(ss, ignore_index=True, sort=False)
+
+
+
+    def list_to_dframe(self, la: list, columns: list):
         """
         列表list转换为Dataframe格式数据
         :param la:
         :param index: 标题
         :return:
         """
-        assert la and index,"la 和 index 不能为空"
-        la_df = pd.DataFrame(data=la, columns=index)
+        assert la and columns, "la 和 columns标题 不能为空"
+        la_df = pd.DataFrame(data=la, columns=columns)
         return la_df
 
     def csv_save(self, listA: list, title: list, csv_name: str = _current_day, mode: str = 'a+'):
@@ -790,25 +966,29 @@ if __name__ == "__main__":
     # # 获取单个基金的历史几天的 单位净值 历史净值 日收益率
     # ff.fund_history_jjjz('512000', 1)
 
-    # 可以存 xlsx和 DB
-    # 格式：名称 代码 类型 xxx xxx ...
-    # 全部基金列表: 名字 代码 类型 columns=['code','name','tpye']
-    all_list = ff.funds_all_list(to_file=0)
-    # for row in all_list.itertuples():
-    #     print(getattr(row,'code'))
-    #     print(getattr(row,'name'))
-    #     print(getattr(row,'type'))
-    print(all_list['name'][0])
+    # # 可以存 xlsx和 DB
+    # # 格式：名称 代码 类型 xxx xxx ...
+    # # 全部基金列表: 名字 代码 类型 columns=['code','name','tpye']
+    # all_list = ff.funds_all_list(to_file=0)
+    # print(all_list['name'][0])
+    #
     # 历史各种涨幅数据 : 共31项 1-阶段涨幅(10项) 2-季度涨幅(8个季度) 3-年度涨幅(8年) 4-持有人结构(最近一期的5项数据)
-    sss1 = ff.fund_his_rates('270002')
-    # 基础信息 : 规模变动信息（8个季度） + 基金经理任期管理信息（5项数据）
-    sss2 = ff.fund_basic_info('270002')
-    # 基金特色数据: 波动+夏普。
-    sss3 = ff.fund_special_info('270002')
+    # sss1 = ff.fund_his_rates(['270002','161219'])
+    # # 基础信息 : 规模变动信息（8个季度） + 基金经理任期管理信息（5项数据）
+    # sss2 = ff.fund_basic_info(['270002','161219'])
+    # # 基金特色数据: 波动+夏普。
+    # sss3 = ff.fund_special_info(['000002'])
+    # # 合并数据写入
+    # sss4 = pd.concat([sss1,sss2,sss3], axis=1)
+    # print(len(sss4))
+    # sss4.to_excel("sss4.xlsx")
 
-    sss4 = pd.concat([sss1,sss2,sss3])
-    sss4.to_excel("sss4.xlsx")
+    ff.funds_full_info()  # 20个 400多s 10个 200多s
 
+    # # 尝试使用 多线程
+    # for t in range(10):
+    #     t = threading.Thread(target=ff.funds_full_info, args=(), name='funds_full_info_' + str(t))
+    #     t.start()
 
 
 
