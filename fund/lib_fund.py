@@ -870,18 +870,45 @@ class libFund(MyLogger):
         df_3 = self.fund_special_info(code_list)
         # 合并数据写入xlsx
         fal = pd.concat([la, df_1, df_2, df_3], axis=1)
-        # excel_name = 'funds_full_info_' + self._current_time + '.csv'
-        xlsx_name = 'funds_full_info.xlsx'
-        if not os.path.exists(xlsx_name):
-            self.logger.info(f"first write..")
-            fal.to_excel(xlsx_name, index=False)
-        else:
-            self.logger.info(f"read_excel and append")
-            pdf = pd.read_excel(xlsx_name)
-            ss = fal.iloc[:50]
-            pdf.append(ss, ignore_index=True, sort=False)
+        excel_name = 'funds_full_info_' + self._current_day + '.xlsx'
+        # xlsx_name = 'funds_full_info.xlsx'
+        fal.to_excel(excel_name, index=False)
+
+    @timer
+    def funds_full_info_bak(self):
+        """
+        所有基金相关信息统一函数：统一请求，方便进行多线程
+        @return:
+        """
+        la = self.funds_all_list()
+        code_list = la['基金代码'].tolist()
+        # print(code_list[0:25],type(code_list),len(code_list))
+        code_list = code_list[0:5]
+        la = la[0:5]
+
+        t1 = threading.Thread(target=self.fund_his_rates, args=(code_list,))
+        t2 = threading.Thread(target=self.fund_basic_info, args=(code_list,))
+        t3 = threading.Thread(target=self.fund_special_info, args=(code_list,))
+        t1.setDaemon(True)
+        t2.setDaemon(True)
+        t3.setDaemon(True)
+        t1.start()
+        t2.start()
+        t3.start()
+        t1.join()
+        t2.join()
+        t3.join()
 
 
+
+        # df_1 = self.fund_his_rates(code_list)
+        # df_2 = self.fund_basic_info(code_list)
+        # df_3 = self.fund_special_info(code_list)
+        # 合并数据写入xlsx
+        # fal = pd.concat([la, df_1, df_2, df_3], axis=1)
+        # excel_name = 'funds_full_info_' + self._current_day + '.xlsx'
+        # # xlsx_name = 'funds_full_info.xlsx'
+        # fal.to_excel(excel_name, index=False)
 
     def list_to_dframe(self, la: list, columns: list):
         """
@@ -983,7 +1010,8 @@ if __name__ == "__main__":
     # print(len(sss4))
     # sss4.to_excel("sss4.xlsx")
 
-    ff.funds_full_info()  # 20个 400多s 10个 200多s
+    # ff.funds_full_info()  # 20个 400多s 10个 200多s
+    ff.funds_full_info_bak()  # 20个 400多s 10个 200多s
 
     # # 尝试使用 多线程
     # for t in range(10):
