@@ -991,7 +991,7 @@ if __name__ == "__main__":
     # sss4.to_excel("sss4.xlsx")
 
     # 写入 同一个csv。可以不连续请求。eg: 0:2 2:5 5:10分段
-    ff.funds_full_info([0,20])  # 20个 400多s 10个 200多s
+    ff.funds_full_info([60,65])  # 20个 400多s 10个 200多s
 
 
 
