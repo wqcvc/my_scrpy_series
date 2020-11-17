@@ -298,7 +298,6 @@ class libFund(MyLogger):
 
         res_f_t = res1_t + res2_t
         df_f = pd.DataFrame(res_f, columns=res_f_t)
-        self.logger.info(df_f)
         # df_f.to_excel("fund_basic_info.xlsx")
         return df_f,res_f_t
 
@@ -318,7 +317,6 @@ class libFund(MyLogger):
             res_f.append(res1)
 
         df_f = pd.DataFrame(res_f, columns=res1_t)
-        self.logger.info(df_f)
         # df_f.to_excel("fund_special_info.xlsx")
 
         return df_f,res1_t
@@ -993,7 +991,7 @@ if __name__ == "__main__":
     # sss4.to_excel("sss4.xlsx")
 
     # 写入 同一个csv。可以不连续请求。eg: 0:2 2:5 5:10分段
-    ff.funds_full_info([5,8])  # 20个 400多s 10个 200多s
+    ff.funds_full_info([0,20])  # 20个 400多s 10个 200多s
 
 
 
