@@ -363,15 +363,16 @@ class libFund(MyLogger):
         df_2,t2 = self.fund_basic_info(code_list)
         df_3,t3 = self.fund_special_info(code_list)
 
-        # 合并数据写入xlsx
-        self.logger.info(la)
-        fa2 = pd.concat([la, df_3], axis=1)
-        self.logger.info(fa2)
+        # 合并数据写入tmp.csv
         fal = pd.concat([la, df_1, df_2, df_3], axis=1)
-        self.logger.info(fal)
+        fal.to_csv('tmp.csv', mode='a+', index=False, header=False)
 
-        excel_name = 'funds_full_info.csv'
-        fal.to_csv(excel_name, mode='a+', index=False, header=False)
+        # 转存xlsx+标题
+        colnums = ['基金代码', '基金名称', '类型'] + t1 + t2 + t3
+        fal_f = pd.read_csv('tmp.csv', names=colnums, dtype=str)
+        self.logger.info(fal_f)
+        excel_name = 'funds_full_info.xlsx'
+        fal_f.to_excel(excel_name)
 
     def update_funds_mysqldata(self):
         """
