@@ -273,8 +273,8 @@ class libFund(MyLogger):
 
         res_f_t = res1_t + res2_t + res3_t
         df_f = pd.DataFrame(res4_f, columns=res_f_t)
-        df_f.to_excel("fund_his_rates.xlsx")
-        return df_f
+        # df_f.to_excel("fund_his_rates.xlsx")
+        return df_f,res_f_t
 
     def fund_basic_info(self, code: list):
         """
@@ -299,8 +299,8 @@ class libFund(MyLogger):
         res_f_t = res1_t + res2_t
         df_f = pd.DataFrame(res_f, columns=res_f_t)
         self.logger.info(df_f)
-        df_f.to_excel("fund_basic_info.xlsx")
-        return df_f
+        # df_f.to_excel("fund_basic_info.xlsx")
+        return df_f,res_f_t
 
     def fund_special_info(self, code: list):
         """
@@ -319,9 +319,9 @@ class libFund(MyLogger):
 
         df_f = pd.DataFrame(res_f, columns=res1_t)
         self.logger.info(df_f)
-        df_f.to_excel("fund_special_info.xlsx")
+        # df_f.to_excel("fund_special_info.xlsx")
 
-        return df_f
+        return df_f,res1_t
 
     def funds_all_list(self, to_file: int = 0):
         """
@@ -345,22 +345,40 @@ class libFund(MyLogger):
 
         return lpd
 
-    def code_to_name(self, code: str):
+    @timer
+    def funds_full_info(self, rrs: list = None):
         """
-        根绝code得到基金名称
-        :param code:
+        所有基金相关信息统一函数：统一请求并写入文件
+        rrs:每次请求的范围。可以重复多次写入 funds_full_info.csv文件中
+        @return:
+        """
+        la = self.funds_all_list(1)
+        code_list = la['基金代码'].tolist()
+        if rrs:
+            code_list = code_list[rrs[0]:rrs[1]]
+            # 复制并更新索引
+            la = la.iloc[rrs[0]:rrs[1]]
+            la.index = range(len(la))
+        df_1,t1 = self.fund_his_rates(code_list)
+        df_2,t2 = self.fund_basic_info(code_list)
+        df_3,t3 = self.fund_special_info(code_list)
+
+        # 合并数据写入xlsx
+        self.logger.info(la)
+        fa2 = pd.concat([la, df_3], axis=1)
+        self.logger.info(fa2)
+        fal = pd.concat([la, df_1, df_2, df_3], axis=1)
+        self.logger.info(fal)
+
+        excel_name = 'funds_full_info.csv'
+        fal.to_csv(excel_name, mode='a+', index=False, header=False)
+
+    def update_funds_mysqldata(self):
+        """
+        更新mysql基金的数据 : 1.只更新全部or部分字段数据:季度涨幅等  2.新基金加入  3.xxx
         :return:
         """
-        resp = self.__funds_list()
-
-        re_rule = {
-            1: "\"xxxxxx\",\".*?\",\"(.*?)\","
-        }
-        re_res = re.findall(re_rule[1].replace('xxxxxx', code), str(resp))
-        if re_res[0]:
-            code_name = re_res[0]
-
-        return code_name
+        ...
 
     def __re_fund_jdzf(self, content):
         """
@@ -711,6 +729,8 @@ class libFund(MyLogger):
         elif method == 1:  # pyppeteer请求，获取动态js可以
             self.logger.info(f"pyppeteer-method.")
             resp = asyncio.get_event_loop().run_until_complete(self.scrpy.pyppeteer_method(url=url))
+            # loop = asyncio.new_event_loop().run_until_complete(self.scrpy.pyppeteer_method(url=url))
+            # asyncio.set_event_loop(loop)
         else:
             self.logger.info(f"dont support this method.")
             return
@@ -854,61 +874,22 @@ class libFund(MyLogger):
         """
         pass
 
-    @timer
-    def funds_full_info(self):
+    def code_to_name(self, code: str):
         """
-        所有基金相关信息统一函数：统一请求，方便进行多线程
-        @return:
+        根绝code得到基金名称
+        :param code:
+        :return:
         """
-        la = self.funds_all_list()
-        code_list = la['基金代码'].tolist()
-        # print(code_list[0:25],type(code_list),len(code_list))
-        code_list = code_list[0:2]
-        la = la[0:2]
-        df_1 = self.fund_his_rates(code_list)
-        df_2 = self.fund_basic_info(code_list)
-        df_3 = self.fund_special_info(code_list)
-        # 合并数据写入xlsx
-        fal = pd.concat([la, df_1, df_2, df_3], axis=1)
-        excel_name = 'funds_full_info_' + self._current_day + '.xlsx'
-        # xlsx_name = 'funds_full_info.xlsx'
-        fal.to_excel(excel_name, index=False)
+        resp = self.__funds_list()
 
-    @timer
-    def funds_full_info_bak(self):
-        """
-        所有基金相关信息统一函数：统一请求，方便进行多线程
-        @return:
-        """
-        la = self.funds_all_list()
-        code_list = la['基金代码'].tolist()
-        # print(code_list[0:25],type(code_list),len(code_list))
-        code_list = code_list[0:5]
-        la = la[0:5]
+        re_rule = {
+            1: "\"xxxxxx\",\".*?\",\"(.*?)\","
+        }
+        re_res = re.findall(re_rule[1].replace('xxxxxx', code), str(resp))
+        if re_res[0]:
+            code_name = re_res[0]
 
-        t1 = threading.Thread(target=self.fund_his_rates, args=(code_list,))
-        t2 = threading.Thread(target=self.fund_basic_info, args=(code_list,))
-        t3 = threading.Thread(target=self.fund_special_info, args=(code_list,))
-        t1.setDaemon(True)
-        t2.setDaemon(True)
-        t3.setDaemon(True)
-        t1.start()
-        t2.start()
-        t3.start()
-        t1.join()
-        t2.join()
-        t3.join()
-
-
-
-        # df_1 = self.fund_his_rates(code_list)
-        # df_2 = self.fund_basic_info(code_list)
-        # df_3 = self.fund_special_info(code_list)
-        # 合并数据写入xlsx
-        # fal = pd.concat([la, df_1, df_2, df_3], axis=1)
-        # excel_name = 'funds_full_info_' + self._current_day + '.xlsx'
-        # # xlsx_name = 'funds_full_info.xlsx'
-        # fal.to_excel(excel_name, index=False)
+        return code_name
 
     def list_to_dframe(self, la: list, columns: list):
         """
@@ -1010,13 +991,8 @@ if __name__ == "__main__":
     # print(len(sss4))
     # sss4.to_excel("sss4.xlsx")
 
-    # ff.funds_full_info()  # 20个 400多s 10个 200多s
-    ff.funds_full_info_bak()  # 20个 400多s 10个 200多s
-
-    # # 尝试使用 多线程
-    # for t in range(10):
-    #     t = threading.Thread(target=ff.funds_full_info, args=(), name='funds_full_info_' + str(t))
-    #     t.start()
+    # 写入 同一个csv。可以不连续请求。eg: 0:2 2:5 5:10分段
+    ff.funds_full_info([5,8])  # 20个 400多s 10个 200多s
 
 
 
