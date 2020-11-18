@@ -350,7 +350,7 @@ class libFund(MyLogger):
         rrs:每次请求的范围。可以重复多次写入 funds_full_info.csv文件中
         @return:
         """
-        la = self.funds_all_list(1)
+        la = self.funds_all_list(to_file=1)
         code_list = la['基金代码'].tolist()
         if rrs:
             code_list = code_list[rrs[0]:rrs[1]]
@@ -363,11 +363,11 @@ class libFund(MyLogger):
 
         # 合并数据写入tmp.csv
         fal = pd.concat([la, df_1, df_2, df_3], axis=1)
-        fal.to_csv('tmp.csv', mode='a+', index=False, header=False)
+        fal.to_csv('funds_full_info.csv', mode='a+', index=False, header=False)
 
         # 转存xlsx+标题
         colnums = ['基金代码', '基金名称', '类型'] + t1 + t2 + t3
-        fal_f = pd.read_csv('tmp.csv', names=colnums, dtype=str)
+        fal_f = pd.read_csv('funds_full_info.csv', names=colnums, dtype=str)
         self.logger.info(fal_f)
         excel_name = 'funds_full_info.xlsx'
         fal_f.to_excel(excel_name)
@@ -991,7 +991,9 @@ if __name__ == "__main__":
     # sss4.to_excel("sss4.xlsx")
 
     # 写入 同一个csv。可以不连续请求。eg: 0:2 2:5 5:10分段
-    ff.funds_full_info([60,65])  # 20个 400多s 10个 200多s
+    ff.funds_full_info([160,161])  # 20个 400多s 10个 200多s
+
+    #to do : 排除债券型
 
 
 

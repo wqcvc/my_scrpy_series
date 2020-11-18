@@ -65,21 +65,21 @@ class libScrpy(MyLogger):
         start_time = time()
         ua = UserAgent()
         launch_args = {
-            "headless": True,
-            'devtools': False,  # 控制界面的显示，用来调试
-            "args": [
-                "--start-maximized",
-                "--no-sandbox",  # --no-sandbox 在 docker 里使用时需要加入的参数，不然会报错
-                "--disable-infobars",
-                "--ignore-certificate-errors",
-                "--log-level=1",
-                "--disable-gpu",
-                "--disable-dev-shm-usage",
-                "--disable-software-rasterizer",
-                "--enable-extensions",
-                "--window-size=1920,1080",
-                "--refer=http://fund.eastmoney.com",
-                f"\"--user-agent={ua.random}\"",
+            'headless': True,
+            # 'devtools': False,  # 控制界面的显示，用来调试
+            'args': [
+                # "--start-maximized",
+                '--no-sandbox',  # --no-sandbox 在 docker 里使用时需要加入的参数，不然会报错
+                # "--disable-infobars",
+                # "--ignore-certificate-errors",
+                # "--log-level=1",
+                # "--disable-gpu",
+                # "--disable-dev-shm-usage",
+                # "--disable-software-rasterizer",
+                # "--enable-extensions",
+                # "--window-size=1920,1080",
+                '--refer=http://fund.eastmoney.com',
+                f'\"--user-agent={ua.random}\"',
             ],
             'dumpio': True,  # 解决浏览器多开卡死
         }
