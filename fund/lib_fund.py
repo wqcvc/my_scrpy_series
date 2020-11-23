@@ -239,11 +239,17 @@ class libFund(MyLogger):
         content = self.__fund_request_by_code(code=code, method=1, flag=4)
         quote_info_list = self.__re_quote_hold(content)
 
+        x = 0.0
         for i in range(len(quote_info_list)):
             self.logger.info(f"[{i + 1}]:{quote_info_list[i]}")
+            if i !=0:
+                x += float(quote_info_list[i][5].replace('%',''))
+        self.logger.info(f"前十重仓占比总仓位比例:[{x:.2f}]")
+
         """
         to do: 前10股票占比例
         """
+
 
         return quote_info_list
 
@@ -360,19 +366,22 @@ class libFund(MyLogger):
         rrs:每次请求的范围。可以重复多次写入 funds_full_info.csv文件中
         @return:
         """
-        la = self.funds_all_list(to_file=1)
-        code_list = la['基金代码'].tolist()
+        la = self.funds_all_list(to_file=0)
+        # 过滤去除没用的 债券型和固收等类型的基金
+        dd = la[la.类型.isin(['混合型', '联接基金', 'QDII', '股票指数', 'QDII-指数', 'ETF-场内' ,'QDII-ETF', '分级杠杆', '股票-FOF', '股票型', '混合-FOF'])]
+        dd.to_excel('funds_use_list.xlsx', index=False)
+        code_list = dd['基金代码'].tolist()
         if rrs:
             code_list = code_list[rrs[0]:rrs[1]]
             # 复制并更新索引
-            la = la.iloc[rrs[0]:rrs[1]]
-            la.index = range(len(la))
+            dd = dd.iloc[rrs[0]:rrs[1]]
+            dd.index = range(len(dd))
         df_1, t1 = self.fund_his_rates(code_list)
         df_2, t2 = self.fund_basic_info(code_list)
         df_3, t3 = self.fund_special_info(code_list)
 
         # 合并数据写入tmp.csv
-        fal = pd.concat([la, df_1, df_2, df_3], axis=1)
+        fal = pd.concat([dd, df_1, df_2, df_3], axis=1)
         fal.to_csv('funds_full_info.csv', mode='a+', index=False, header=False)
 
         # 转存xlsx+标题
@@ -995,6 +1004,6 @@ if __name__ == "__main__":
     # # 10.基金汇总保存进同一个csv + xlsx. 可以不连续请求。eg: 0:2 2:5 5:10分段
     # # 存在性能问题目前
     # to do : 排除债券型和货币型
-    ff.funds_full_info([160, 161])  # 20个 400多s 10个 200多s
+    ff.funds_full_info([0, 4])  # 20个400多s 10个200多s 20个720s
 
 
