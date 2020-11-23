@@ -241,6 +241,9 @@ class libFund(MyLogger):
 
         for i in range(len(quote_info_list)):
             self.logger.info(f"[{i + 1}]:{quote_info_list[i]}")
+        """
+        to do: 前10股票占比例
+        """
 
         return quote_info_list
 
@@ -274,7 +277,14 @@ class libFund(MyLogger):
         res_f_t = res1_t + res2_t + res3_t
         df_f = pd.DataFrame(res4_f, columns=res_f_t)
         # df_f.to_excel("fund_his_rates.xlsx")
-        return df_f,res_f_t
+        return df_f, res_f_t
+
+    def fund_company_info(self, name: str):
+        """
+        返回所有基金公司的各种信息:名字 规模 成立日期 排名等
+        :param name:
+        :return:
+        """
 
     def fund_basic_info(self, code: list):
         """
@@ -299,7 +309,7 @@ class libFund(MyLogger):
         res_f_t = res1_t + res2_t
         df_f = pd.DataFrame(res_f, columns=res_f_t)
         # df_f.to_excel("fund_basic_info.xlsx")
-        return df_f,res_f_t
+        return df_f, res_f_t
 
     def fund_special_info(self, code: list):
         """
@@ -319,7 +329,7 @@ class libFund(MyLogger):
         df_f = pd.DataFrame(res_f, columns=res1_t)
         # df_f.to_excel("fund_special_info.xlsx")
 
-        return df_f,res1_t
+        return df_f, res1_t
 
     def funds_all_list(self, to_file: int = 0):
         """
@@ -336,7 +346,7 @@ class libFund(MyLogger):
         re_res2 = re.findall(re_rule[2], str(resp))
         lpd = pd.DataFrame(re_res2, columns=['基金代码', '基金名称', '类型'])
         if to_file == 1:
-            lpd.to_excel('all_funds.xlsx', index=False)
+            lpd.to_excel('funds_all_list.xlsx', index=False)
             self.logger.info(f"all_funds write to xlsx file finish.")
         else:
             pass
@@ -357,9 +367,9 @@ class libFund(MyLogger):
             # 复制并更新索引
             la = la.iloc[rrs[0]:rrs[1]]
             la.index = range(len(la))
-        df_1,t1 = self.fund_his_rates(code_list)
-        df_2,t2 = self.fund_basic_info(code_list)
-        df_3,t3 = self.fund_special_info(code_list)
+        df_1, t1 = self.fund_his_rates(code_list)
+        df_2, t2 = self.fund_basic_info(code_list)
+        df_3, t3 = self.fund_special_info(code_list)
 
         # 合并数据写入tmp.csv
         fal = pd.concat([la, df_1, df_2, df_3], axis=1)
@@ -647,7 +657,7 @@ class libFund(MyLogger):
         :return:
         """
         if content is None:
-            return ['-','-']
+            return ['-', '-']
         html = etree.HTML(content)
         xpath_rules = {
             1: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/div[4]/table/tbody/tr[2]/td[2]/text()',
@@ -672,7 +682,7 @@ class libFund(MyLogger):
         :return:
         """
         if content is None:
-            return ['-','-']
+            return ['-', '-']
         html = etree.HTML(content)
         xpath_rules = {
             3: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/div[4]/table/tbody/tr[2]/td[1]/text()',
@@ -699,7 +709,7 @@ class libFund(MyLogger):
         resp = self.scrpy.request_method(url)
         return resp
 
-    @retry(2,5)
+    @retry(2, 5)
     def __fund_request_by_code(self, code: str, flag: int = 1, method: int = 0, **kwargs):
         """
         通过传入基金code的方式根据功能自动拼接url获取数据
@@ -961,39 +971,30 @@ class libFund(MyLogger):
 if __name__ == "__main__":
     fund_code_list = ['512000', '270002']
     ff = libFund(level=logging.INFO)
-    # # 实时数据不作处理
-    # # 获取基金列表的实时涨跌幅
-    # ff.fund_current_jjjz()
-    # #获取基金列表的持有收益率
-    # ff.fund_rate_estimate()
-    # # 获取基金列表的持有总金额和持有收益金额,实时估算收益
-    # ff.fund_hold_info
-    #
-    # # 净值数据-
-    # # 获取单个基金的历史几天的 单位净值 历史净值 日收益率
-    # ff.fund_history_jjjz('512000', 1)
 
-    # # 可以存 xlsx和 DB
-    # # 格式：名称 代码 类型 xxx xxx ...
-    # # 全部基金列表: 名字 代码 类型 columns=['code','name','tpye']
+    # # 1.获取基金列表的实时涨跌幅
+    # ff.fund_current_jjjz()
+    # # 2.获取基金列表的持有收益率
+    # ff.fund_rate_estimate()
+    # # 3.获取基金列表的持有总金额 + 持有收益金额 + 实时估算收益
+    # ff.fund_hold_info
+    # # 4.单个基金股票前10数据 + 仓位占比重
+    # ff.fund_hold_shares('163406')
+    # # 5.单个基金的历史单位净值 + 历史净值 + 日收益率
+    # ff.fund_history_jjjz('512000', 1)
+    # # 6.全部基金列表: 基金名字 基金代码 类型
     # all_list = ff.funds_all_list(to_file=0)
     # print(all_list['name'][0])
-    #
-    # 历史各种涨幅数据 : 共31项 1-阶段涨幅(10项) 2-季度涨幅(8个季度) 3-年度涨幅(8年) 4-持有人结构(最近一期的5项数据)
+    # # 7.历史各种涨幅数据 : 共31项 1-阶段涨幅(10项) 2-季度涨幅(8个季度) 3-年度涨幅(8年) 4-持有人结构(最近一期的5项数据)
     # sss1 = ff.fund_his_rates(['270002','161219'])
-    # # 基础信息 : 规模变动信息（8个季度） + 基金经理任期管理信息（5项数据）
+    # # 8.基础信息 : 规模变动信息（8个季度） + 基金经理任期管理信息（5项数据）
     # sss2 = ff.fund_basic_info(['270002','161219'])
-    # # 基金特色数据: 波动+夏普。
+    # # 9.基金特色数据: 标准差 + 夏普率。
     # sss3 = ff.fund_special_info(['000002'])
-    # # 合并数据写入
-    # sss4 = pd.concat([sss1,sss2,sss3], axis=1)
-    # print(len(sss4))
-    # sss4.to_excel("sss4.xlsx")
 
-    # 写入 同一个csv。可以不连续请求。eg: 0:2 2:5 5:10分段
-    ff.funds_full_info([160,161])  # 20个 400多s 10个 200多s
-
-    #to do : 排除债券型
-
+    # # 10.基金汇总保存进同一个csv + xlsx. 可以不连续请求。eg: 0:2 2:5 5:10分段
+    # # 存在性能问题目前
+    # to do : 排除债券型和货币型
+    ff.funds_full_info([160, 161])  # 20个 400多s 10个 200多s
 
 
