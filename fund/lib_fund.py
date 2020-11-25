@@ -242,14 +242,13 @@ class libFund(MyLogger):
         x = 0.0
         for i in range(len(quote_info_list)):
             self.logger.info(f"[{i + 1}]:{quote_info_list[i]}")
-            if i !=0:
-                x += float(quote_info_list[i][5].replace('%',''))
+            if i != 0:
+                x += float(quote_info_list[i][5].replace('%', ''))
         self.logger.info(f"前十重仓占比总仓位比例:[{x:.2f}]")
 
         """
         to do: 前10股票占比例
         """
-
 
         return quote_info_list
 
@@ -264,21 +263,37 @@ class libFund(MyLogger):
         # 季度年涨幅  http://fundf10.eastmoney.com/jndzf_270002.html
         # 持有人结构  http://fundf10.eastmoney.com/cyrjg_270002.html
 
-        res4_f = []
+        res4_f, res1_t, res2_t, res3_t = [], [], [], []
+        flag = 0
         for i in range(len(code)):
             # 阶段涨幅
             content1 = self.__fund_request_by_code(code=code[i], flag=5, method=1)
+            # 返回为Nonetype时候的处理
             res1 = self.__re_fund_jdzf(content=content1)
-            res1_t = self.__re_fund_jdzf_title(content=content1)
+            # 提高性能优化标题re次数
+            if not res1:
+                res1 = ['未获取'] * 10
+            self.logger.info(f"res1 is:{res1}")
+            if flag == 0:
+                res1_t = self.__re_fund_jdzf_title(content=content1)
             # 季度/年涨幅
             content2 = self.__fund_request_by_code(code=code[i], flag=6, method=1)
             res2 = self.__re_fund_jndzf(content=content2)
-            res2_t = self.__re_fund_jndzf_title(content=content2)
+            if not res2:
+                res2 = ['未获取'] * 16
+            self.logger.info(f"res2 is:{res2}")
+            if flag == 0:
+                res2_t = self.__re_fund_jndzf_title(content=content2)
             # 持有人结构
             content3 = self.__fund_request_by_code(code=code[i], flag=7, method=1)
             res3 = self.__re_fund_cyrjg(content=content3)
-            res3_t = self.__re_fund_cyrjg_title(content=content3)
+            if not res3:
+                res3 = ['未获取'] * 5
+            self.logger.info(f"res3 is:{res3}")
+            if flag == 0:
+                res3_t = self.__re_fund_cyrjg_title(content=content3)
             res4_f.append(res1 + res2 + res3)
+            flag += 1
 
         res_f_t = res1_t + res2_t + res3_t
         df_f = pd.DataFrame(res4_f, columns=res_f_t)
@@ -299,17 +314,24 @@ class libFund(MyLogger):
         :param : 1.规模+规模增长数据 2.基金经理个人,管理规模,业绩等信息
         :return:
         """
-        res_f = []
+        res_f, res1_t, res2_t = [], [], []
+        flag = 0
         for i in range(len(code)):
             # 规模变动  http://fundf10.eastmoney.com/gmbd_270002.html
             content1 = self.__fund_request_by_code(code=code[i], flag=8, method=1)
             res1 = self.__re_fund_gmbd(content=content1)
-            res1_t = self.__re_fund_gmbd_title(content=content1)
+            if not res1:
+                res1 = ['未获取'] * 8
+            if flag == 0:
+                res1_t = self.__re_fund_gmbd_title(content=content1)
 
             # 基金经理  http://fundf10.eastmoney.com/jjjl_270002.html
             content2 = self.__fund_request_by_code(code=code[i], flag=9, method=1)
             res2 = self.__re_fund_jjjl(content=content2)
-            res2_t = self.__re_fund_jjjl_title(content=content2)
+            if not res2:
+                res2 = ['未获取'] * 6
+            if flag == 0:
+                res2_t = self.__re_fund_jjjl_title(content=content2)
             res_f.append(res1 + res2)
 
         res_f_t = res1_t + res2_t
@@ -325,10 +347,12 @@ class libFund(MyLogger):
         :return:
         """
         # 特殊数据 http://fundf10.eastmoney.com/tsdata_270002.html
-        res_f = []
+        res_f, res1_t = [], []
         for i in range(len(code)):
             content1 = self.__fund_request_by_code(code=code[i], flag=10, method=1)
             res1 = self.__re_fund_tsdata(content=content1)
+            if not res1:
+                res1 = ['未获取'] * 2
             res1_t = self.__re_fund_tsdata_title(content=content1)
             res_f.append(res1)
 
@@ -366,9 +390,10 @@ class libFund(MyLogger):
         rrs:每次请求的范围。可以重复多次写入 funds_full_info.csv文件中
         @return:
         """
-        la = self.funds_all_list(to_file=0)
+        la = self.funds_all_list(to_file=1)
         # 过滤去除没用的 债券型和固收等类型的基金
-        dd = la[la.类型.isin(['混合型', '联接基金', 'QDII', '股票指数', 'QDII-指数', 'ETF-场内' ,'QDII-ETF', '分级杠杆', '股票-FOF', '股票型', '混合-FOF'])]
+        dd = la[la.类型.isin(
+            ['混合型', '联接基金', 'QDII', '股票指数', 'QDII-指数', 'ETF-场内', 'QDII-ETF', '分级杠杆', '股票-FOF', '股票型', '混合-FOF'])]
         dd.to_excel('funds_use_list.xlsx', index=False)
         code_list = dd['基金代码'].tolist()
         if rrs:
@@ -380,11 +405,11 @@ class libFund(MyLogger):
         df_2, t2 = self.fund_basic_info(code_list)
         df_3, t3 = self.fund_special_info(code_list)
 
-        # 合并数据写入tmp.csv
+        # 合并数据写入funds_full_info.csv
         fal = pd.concat([dd, df_1, df_2, df_3], axis=1)
         fal.to_csv('funds_full_info.csv', mode='a+', index=False, header=False)
 
-        # 转存xlsx+标题
+        # 转存xlsx+标题.写入xlsx失败没关系。csv有完整数据，再次保存进xlsx即可
         colnums = ['基金代码', '基金名称', '类型'] + t1 + t2 + t3
         fal_f = pd.read_csv('funds_full_info.csv', names=colnums, dtype=str)
         self.logger.info(fal_f)
@@ -398,6 +423,7 @@ class libFund(MyLogger):
         """
         ...
 
+    @timer
     def __re_fund_jdzf(self, content):
         """
         使用xpath匹配基金的阶段涨幅
@@ -421,6 +447,7 @@ class libFund(MyLogger):
                 listA.append(res[0])
         return listA
 
+    @timer
     def __re_fund_jdzf_title(self, content):
         """
         使用xpath匹配基金的阶段涨幅
@@ -443,6 +470,7 @@ class libFund(MyLogger):
                 list_t.append(res2[0])
         return list_t
 
+    @timer
     def __re_fund_jndzf(self, content):
         """
         使用xpath匹配基金的季度/年涨幅
@@ -476,6 +504,7 @@ class libFund(MyLogger):
 
         return listA
 
+    @timer
     def __re_fund_jndzf_title(self, content):
         """
         使用xpath匹配基金的季度/年涨幅
@@ -505,6 +534,7 @@ class libFund(MyLogger):
 
         return list_t
 
+    @timer
     def __re_fund_cyrjg(self, content):
         """
         使用xpath匹配基金的持有人结构
@@ -528,6 +558,7 @@ class libFund(MyLogger):
 
         return listA
 
+    @timer
     def __re_fund_cyrjg_title(self, content):
         """
         使用xpath匹配基金的持有人结构
@@ -551,6 +582,7 @@ class libFund(MyLogger):
                 list_t.append(res2[0])
         return list_t
 
+    @timer
     def __re_fund_gmbd(self, content):
         """
         使用xpath匹配基金的规模变动
@@ -575,6 +607,7 @@ class libFund(MyLogger):
                 listA.append(res[0])
         return listA
 
+    @timer
     def __re_fund_gmbd_title(self, content):
         """
         使用xpath匹配基金的规模变动
@@ -599,6 +632,7 @@ class libFund(MyLogger):
                 list_t.append(res2[0])
         return list_t
 
+    @timer
     def __re_fund_jjjl(self, content):
         """
         使用xpath匹配基金的基金经理信息等
@@ -628,6 +662,7 @@ class libFund(MyLogger):
 
         return listA
 
+    @timer
     def __re_fund_jjjl_title(self, content):
         """
         使用xpath匹配基金的基金经理信息等
@@ -659,6 +694,7 @@ class libFund(MyLogger):
 
         return list_t
 
+    @timer
     def __re_fund_tsdata(self, content):
         """
         使用xpath匹配基金的基金经理信息等
@@ -684,6 +720,7 @@ class libFund(MyLogger):
                 listA.append(res[0])
         return listA
 
+    @timer
     def __re_fund_tsdata_title(self, content):
         """
         使用xpath匹配基金的基金经理信息等
@@ -708,6 +745,7 @@ class libFund(MyLogger):
                 list_t.append(res_t[0])
         return list_t
 
+    @timer
     def __funds_list(self):
         """
         目前市场上所有成立的基金
@@ -1004,6 +1042,4 @@ if __name__ == "__main__":
     # # 10.基金汇总保存进同一个csv + xlsx. 可以不连续请求。eg: 0:2 2:5 5:10分段
     # # 存在性能问题目前
     # to do : 排除债券型和货币型
-    ff.funds_full_info([4, 1004])  # 20个400多s 10个200多s 20个720s
-
-
+    ff.funds_full_info([252, 253])  # 20个400多s 10个200多s 20个720s
