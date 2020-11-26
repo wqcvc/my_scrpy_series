@@ -254,7 +254,7 @@ class libFund(MyLogger):
 
     def fund_his_rates(self, code: list):
         """
-
+        各种涨幅
         :param code: 基金代码
         :param  : 涨幅: 1-阶段涨幅 2-季度涨幅 3-年度涨幅 4-持有人结构
         :return:
@@ -1031,4 +1031,7 @@ if __name__ == "__main__":
     # # 10.基金汇总保存进同一个csv + xlsx. 可以不连续请求。eg: 0:2 2:5 5:10分段
     # # 存在性能问题目前
     # to do : 排除债券型和货币型
-    ff.funds_full_info([520, 1170])  # 20个400多s 10个200多s 20个720s
+    ff.funds_full_info([1514, 1519])  # 20个400多s 10个200多s 20个720s
+
+    #10个：116。8s 20个：256s
+    #极端： 20个： 832s

@@ -95,7 +95,7 @@ class libScrpy(MyLogger):
         text = await page.content()
         await browser.close()
         end_time = time()
-        self.logger.info(f"this request cost seconds:{end_time - start_time}")
+        self.logger.info(f"Request Costs:{end_time - start_time:.2f}s")
         return text
 
     def selenium_method(self,url: str):
