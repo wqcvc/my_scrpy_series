@@ -271,25 +271,25 @@ class libFund(MyLogger):
             # 返回为Nonetype时候的处理
             res1 = self.__re_fund_jdzf(content=content1)
             # 提高性能优化标题re次数
+            self.logger.info(f"res1 is:{res1}")
             if not res1:
                 res1 = ['未获取'] * 10
-            self.logger.info(f"res1 is:{res1}")
             if flag == 0:
                 res1_t = self.__re_fund_jdzf_title(content=content1)
             # 季度/年涨幅
             content2 = self.__fund_request_by_code(code=code[i], flag=6, method=1)
             res2 = self.__re_fund_jndzf(content=content2)
+            self.logger.info(f"res2 is:{res2}")
             if not res2:
                 res2 = ['未获取'] * 16
-            self.logger.info(f"res2 is:{res2}")
             if flag == 0:
                 res2_t = self.__re_fund_jndzf_title(content=content2)
             # 持有人结构
             content3 = self.__fund_request_by_code(code=code[i], flag=7, method=1)
             res3 = self.__re_fund_cyrjg(content=content3)
+            self.logger.info(f"res3 is:{res3}")
             if not res3:
                 res3 = ['未获取'] * 5
-            self.logger.info(f"res3 is:{res3}")
             if flag == 0:
                 res3_t = self.__re_fund_cyrjg_title(content=content3)
             res4_f.append(res1 + res2 + res3)
@@ -298,6 +298,7 @@ class libFund(MyLogger):
         res_f_t = res1_t + res2_t + res3_t
         df_f = pd.DataFrame(res4_f, columns=res_f_t)
         # df_f.to_excel("fund_his_rates.xlsx")
+        self.logger.info(f"df_f is:{df_f}.\n res_f_t is :{res_f_t}")
         return df_f, res_f_t
 
     def fund_company_info(self, name: str):
@@ -402,6 +403,7 @@ class libFund(MyLogger):
             dd = dd.iloc[rrs[0]:rrs[1]]
             dd.index = range(len(dd))
         df_1, t1 = self.fund_his_rates(code_list)
+        self.logger.info(f"df_1 is:{df_1}.\n t1 is :{t1}")
         df_2, t2 = self.fund_basic_info(code_list)
         df_3, t3 = self.fund_special_info(code_list)
 
@@ -423,7 +425,6 @@ class libFund(MyLogger):
         """
         ...
 
-    @timer
     def __re_fund_jdzf(self, content):
         """
         使用xpath匹配基金的阶段涨幅
@@ -447,7 +448,6 @@ class libFund(MyLogger):
                 listA.append(res[0])
         return listA
 
-    @timer
     def __re_fund_jdzf_title(self, content):
         """
         使用xpath匹配基金的阶段涨幅
@@ -470,7 +470,6 @@ class libFund(MyLogger):
                 list_t.append(res2[0])
         return list_t
 
-    @timer
     def __re_fund_jndzf(self, content):
         """
         使用xpath匹配基金的季度/年涨幅
@@ -504,7 +503,6 @@ class libFund(MyLogger):
 
         return listA
 
-    @timer
     def __re_fund_jndzf_title(self, content):
         """
         使用xpath匹配基金的季度/年涨幅
@@ -534,7 +532,6 @@ class libFund(MyLogger):
 
         return list_t
 
-    @timer
     def __re_fund_cyrjg(self, content):
         """
         使用xpath匹配基金的持有人结构
@@ -558,7 +555,6 @@ class libFund(MyLogger):
 
         return listA
 
-    @timer
     def __re_fund_cyrjg_title(self, content):
         """
         使用xpath匹配基金的持有人结构
@@ -582,7 +578,6 @@ class libFund(MyLogger):
                 list_t.append(res2[0])
         return list_t
 
-    @timer
     def __re_fund_gmbd(self, content):
         """
         使用xpath匹配基金的规模变动
@@ -607,7 +602,6 @@ class libFund(MyLogger):
                 listA.append(res[0])
         return listA
 
-    @timer
     def __re_fund_gmbd_title(self, content):
         """
         使用xpath匹配基金的规模变动
@@ -632,7 +626,6 @@ class libFund(MyLogger):
                 list_t.append(res2[0])
         return list_t
 
-    @timer
     def __re_fund_jjjl(self, content):
         """
         使用xpath匹配基金的基金经理信息等
@@ -662,7 +655,6 @@ class libFund(MyLogger):
 
         return listA
 
-    @timer
     def __re_fund_jjjl_title(self, content):
         """
         使用xpath匹配基金的基金经理信息等
@@ -694,7 +686,6 @@ class libFund(MyLogger):
 
         return list_t
 
-    @timer
     def __re_fund_tsdata(self, content):
         """
         使用xpath匹配基金的基金经理信息等
@@ -720,7 +711,6 @@ class libFund(MyLogger):
                 listA.append(res[0])
         return listA
 
-    @timer
     def __re_fund_tsdata_title(self, content):
         """
         使用xpath匹配基金的基金经理信息等
@@ -745,7 +735,6 @@ class libFund(MyLogger):
                 list_t.append(res_t[0])
         return list_t
 
-    @timer
     def __funds_list(self):
         """
         目前市场上所有成立的基金
@@ -1042,4 +1031,4 @@ if __name__ == "__main__":
     # # 10.基金汇总保存进同一个csv + xlsx. 可以不连续请求。eg: 0:2 2:5 5:10分段
     # # 存在性能问题目前
     # to do : 排除债券型和货币型
-    ff.funds_full_info([252, 253])  # 20个400多s 10个200多s 20个720s
+    ff.funds_full_info([520, 1170])  # 20个400多s 10个200多s 20个720s
