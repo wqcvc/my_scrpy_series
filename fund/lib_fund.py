@@ -22,7 +22,7 @@ import ast
 import asyncio
 import pandas as pd
 import threading
-import os
+import sys
 
 
 # 装饰器:执行时间统计
@@ -31,7 +31,7 @@ def timer(func):
         t1 = time.time()
         func(*args, **kwargs)
         t2 = time.time()
-        print(f"函数名:[{func.__name__}]执行耗时:[{t2 - t1}] seconds.")
+        print(f"函数名:[{func.__name__}]执行耗时:[{t2 - t1:.2f}]秒.")
 
     return wrapper
 
@@ -266,12 +266,13 @@ class libFund(MyLogger):
         res4_f, res1_t, res2_t, res3_t = [], [], [], []
         flag = 0
         for i in range(len(code)):
+            self.logger.info(f"In func[{sys._getframe().f_code.co_name}]的第[{i+1}]个/共{len(code)}个 : current code:[{code[i]}]")
             # 阶段涨幅
             content1 = self.__fund_request_by_code(code=code[i], flag=5, method=1)
             # 返回为Nonetype时候的处理
             res1 = self.__re_fund_jdzf(content=content1)
             # 提高性能优化标题re次数
-            self.logger.info(f"res1 is:{res1}")
+            # self.logger.info(f"res1 is:{res1}")
             if not res1:
                 res1 = ['未获取'] * 10
             if flag == 0:
@@ -279,7 +280,7 @@ class libFund(MyLogger):
             # 季度/年涨幅
             content2 = self.__fund_request_by_code(code=code[i], flag=6, method=1)
             res2 = self.__re_fund_jndzf(content=content2)
-            self.logger.info(f"res2 is:{res2}")
+            # self.logger.info(f"res2 is:{res2}")
             if not res2:
                 res2 = ['未获取'] * 16
             if flag == 0:
@@ -287,7 +288,7 @@ class libFund(MyLogger):
             # 持有人结构
             content3 = self.__fund_request_by_code(code=code[i], flag=7, method=1)
             res3 = self.__re_fund_cyrjg(content=content3)
-            self.logger.info(f"res3 is:{res3}")
+            # self.logger.info(f"res3 is:{res3}")
             if not res3:
                 res3 = ['未获取'] * 5
             if flag == 0:
@@ -298,7 +299,6 @@ class libFund(MyLogger):
         res_f_t = res1_t + res2_t + res3_t
         df_f = pd.DataFrame(res4_f, columns=res_f_t)
         # df_f.to_excel("fund_his_rates.xlsx")
-        self.logger.info(f"df_f is:{df_f}.\n res_f_t is :{res_f_t}")
         return df_f, res_f_t
 
     def fund_company_info(self, name: str):
@@ -318,6 +318,7 @@ class libFund(MyLogger):
         res_f, res1_t, res2_t = [], [], []
         flag = 0
         for i in range(len(code)):
+            self.logger.info(f"In func[{sys._getframe().f_code.co_name}]的第[{i+1}]个/共{len(code)}个 : current code:[{code[i]}]")
             # 规模变动  http://fundf10.eastmoney.com/gmbd_270002.html
             content1 = self.__fund_request_by_code(code=code[i], flag=8, method=1)
             res1 = self.__re_fund_gmbd(content=content1)
@@ -350,6 +351,7 @@ class libFund(MyLogger):
         # 特殊数据 http://fundf10.eastmoney.com/tsdata_270002.html
         res_f, res1_t = [], []
         for i in range(len(code)):
+            self.logger.info(f"In func[{sys._getframe().f_code.co_name}]的第[{i+1}]个/共{len(code)}个 : current code:[{code[i]}]")
             content1 = self.__fund_request_by_code(code=code[i], flag=10, method=1)
             res1 = self.__re_fund_tsdata(content=content1)
             if not res1:
@@ -403,7 +405,6 @@ class libFund(MyLogger):
             dd = dd.iloc[rrs[0]:rrs[1]]
             dd.index = range(len(dd))
         df_1, t1 = self.fund_his_rates(code_list)
-        self.logger.info(f"df_1 is:{df_1}.\n t1 is :{t1}")
         df_2, t2 = self.fund_basic_info(code_list)
         df_3, t3 = self.fund_special_info(code_list)
 
@@ -772,7 +773,6 @@ class libFund(MyLogger):
             resp = self.scrpy.request_method(url=url)
 
         elif method == 1:  # pyppeteer请求，获取动态js可以
-            self.logger.info(f"pyppeteer-method.")
             resp = asyncio.get_event_loop().run_until_complete(self.scrpy.pyppeteer_method(url=url))
             # loop = asyncio.new_event_loop().run_until_complete(self.scrpy.pyppeteer_method(url=url))
             # asyncio.set_event_loop(loop)
@@ -1031,7 +1031,7 @@ if __name__ == "__main__":
     # # 10.基金汇总保存进同一个csv + xlsx. 可以不连续请求。eg: 0:2 2:5 5:10分段
     # # 存在性能问题目前
     # to do : 排除债券型和货币型
-    ff.funds_full_info([1514, 1519])  # 20个400多s 10个200多s 20个720s
+    ff.funds_full_info([1730, 1733])  # 20个400多s 10个200多s 20个720s
 
-    #10个：116。8s 20个：256s
-    #极端： 20个： 832s
+    #10个：116。8s 20个：256s 3个 75s
+    #极端： 20个： 832s 100个： 3464s

@@ -149,8 +149,8 @@ async def get_jdzf(rrs: list):
             page = await browser.newPage()
             await page.evaluateOnNewDocument('() =>{ Object.defineProperties(navigator,'
                                              '{ webdriver:{ get: () => false } }) }')
-            resp = await page.goto(url=url.replace('xxxxx', str(code_list[i])), timeout=30000)
-            print(f"current code:[{code_list[i]}]")
+            resp = await page.goto(url=url.replace('xxxxx', str(code_list[i])), timeout=60000)
+            print(f"func[{sys._getframe().f_code.co_name}]的第[{i+1}]个/共{len(code_list)}个 : current code:[{code_list[i]}]")
             if resp.status != 200:
                 pass
             text = await page.content()
@@ -223,8 +223,8 @@ async def get_jndzf(rrs: list):
             page = await browser.newPage()
             await page.evaluateOnNewDocument('() =>{ Object.defineProperties(navigator,'
                                              '{ webdriver:{ get: () => false } }) }')
-            resp = await page.goto(url=url.replace('xxxxx', str(code_list[i])), timeout=30000)
-            print(f"current code:[{code_list[i]}]")
+            resp = await page.goto(url=url.replace('xxxxx', str(code_list[i])), timeout=60000)
+            print(f"func[{sys._getframe().f_code.co_name}]的第[{i+1}]个/共{len(code_list)}个 : current code:[{code_list[i]}]")
             if resp.status != 200:
                 print(f"resp.status: [{resp.status}]")
                 pass
@@ -303,8 +303,8 @@ async def get_cyrjg(rrs: list):
             page = await browser.newPage()
             await page.evaluateOnNewDocument('() =>{ Object.defineProperties(navigator,'
                                              '{ webdriver:{ get: () => false } }) }')
-            resp = await page.goto(url=url.replace('xxxxx', str(code_list[i])), timeout=30000)
-            print(f"current code:[{code_list[i]}]")
+            resp = await page.goto(url=url.replace('xxxxx', str(code_list[i])), timeout=60000)
+            print(f"func[{sys._getframe().f_code.co_name}]的第[{i+1}]个/共{len(code_list)}个 : current code:[{code_list[i]}]")
             if resp.status != 200:
                 pass
             text = await page.content()
@@ -371,8 +371,8 @@ async def get_gmbd(rrs: list):
             page = await browser.newPage()
             await page.evaluateOnNewDocument('() =>{ Object.defineProperties(navigator,'
                                              '{ webdriver:{ get: () => false } }) }')
-            resp = await page.goto(url=url.replace('xxxxx', str(code_list[i])), timeout=30000)
-            print(f"current code:[{code_list[i]}]")
+            resp = await page.goto(url=url.replace('xxxxx', str(code_list[i])), timeout=60000)
+            print(f"func[{sys._getframe().f_code.co_name}]的第[{i+1}]个/共{len(code_list)}个 : current code:[{code_list[i]}]")
             if resp.status != 200:
                 pass
             text = await page.content()
@@ -441,8 +441,8 @@ async def get_jjjl(rrs: list):
             page = await browser.newPage()
             await page.evaluateOnNewDocument('() =>{ Object.defineProperties(navigator,'
                                              '{ webdriver:{ get: () => false } }) }')
-            resp = await page.goto(url=url.replace('xxxxx', str(code_list[i])), timeout=30000)
-            print(f"current code:[{code_list[i]}]")
+            resp = await page.goto(url=url.replace('xxxxx', str(code_list[i])), timeout=60000)
+            print(f"func[{sys._getframe().f_code.co_name}]的第[{i+1}]个/共{len(code_list)}个 : current code:[{code_list[i]}]")
             if resp.status != 200:
                 pass
             text = await page.content()
@@ -515,8 +515,8 @@ async def get_tsdata(rrs: list):
             page = await browser.newPage()
             await page.evaluateOnNewDocument('() =>{ Object.defineProperties(navigator,'
                                              '{ webdriver:{ get: () => false } }) }')
-            resp = await page.goto(url=url.replace('xxxxx', str(code_list[i])), timeout=30000)
-            print(f"current code:[{code_list[i]}]")
+            resp = await page.goto(url=url.replace('xxxxx', str(code_list[i])), timeout=60000)
+            print(f"func[{sys._getframe().f_code.co_name}]的第[{i+1}]个/共{len(code_list)}个 : current code:[{code_list[i]}]")
             if resp.status != 200:
                 pass
             text = await page.content()
@@ -579,8 +579,8 @@ if __name__ == '__main__':
     #             ]  # , "http://www.10010.com/net5/011/", "http://python.jobbole.com/87541/"
     # tasks = [get_html(url_list[0]), get_html(url_list[1]), get_html(url_list[2]), get_html(url_list[3]), get_html(url_list[4]),get_html(url_list[5])]
 
-    ranges = [1514, 1524]
-    # 10个：62s 20个：116s
+    ranges = [2400, 4080]
+    # 10个：62s 20个：116s 100个：1335s 600个 9172s  15s/个
     # 极端： 5个 128s 20个：
     tasks = [get_jdzf(rrs=ranges), get_jndzf(rrs=ranges), get_cyrjg(rrs=ranges), get_gmbd(rrs=ranges),
              get_jjjl(rrs=ranges), get_tsdata(rrs=ranges)]
@@ -627,4 +627,4 @@ if __name__ == '__main__':
     # csv 转成 xlsx 带上标题
     # to do
 
-    print('耗时：', time() - s_time)
+    print(f"全部请求完成,耗时:[{time() - s_time:.2f}s].开始于:{s_time} 结束于:{time()}")
