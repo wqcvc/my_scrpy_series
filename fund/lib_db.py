@@ -6,7 +6,7 @@
 """
 
 import pymysql
-
+pymysql.install_as_MySQLdb()
 # wait to learn
 from urllib.parse import quote_plus
 from sqlalchemy import event, exc, select, orm, create_engine
@@ -81,10 +81,34 @@ class CC(AA,BB):
 
 
 
-if __name__ == "__main__":
-    test_db = libDB()
-    sql_1 = "select * from user1;"
-    test_db.query(sql_1)
+# if __name__ == "__main__":
+#     test_db = libDB()
+#     sql_1 = "select * from user1;"
+#     test_db.query(sql_1)
+#
+#     c1=CC()
+#     res=c1.exec()
 
-    c1=CC()
-    res=c1.exec()
+
+"""
+sqlalchemy入门
+Engine: 连接
+Session: 连接池
+Model: 表
+Colnum: 列 
+Query: 若干行
+"""
+from sqlalchemy import create_engine
+
+engine = create_engine("mysql://root:km9m77wq123@127.0.0.1:3306/scrpy?charset=utf8",
+                       echo=True,  # echo: 当设置为True时会将orm语句转化为sql语句打印，一般debug的时候可用
+                       pool_size=10,  # pool_size: 连接池的大小，默认为5个，设置为0时表示连接无限制
+                       pool_recycle=60*2,  # pool_recycle: 设置时间以限制数据库多久没连接自动断开
+                       pool_pre_ping=True
+                       )
+
+
+
+
+
+

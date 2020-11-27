@@ -579,7 +579,7 @@ if __name__ == '__main__':
     #             ]  # , "http://www.10010.com/net5/011/", "http://python.jobbole.com/87541/"
     # tasks = [get_html(url_list[0]), get_html(url_list[1]), get_html(url_list[2]), get_html(url_list[3]), get_html(url_list[4]),get_html(url_list[5])]
 
-    ranges = [2400, 4080]
+    ranges = [4085, 4285]
     # 10个：62s 20个：116s 100个：1335s 600个 9172s  15s/个
     # 极端： 5个 128s 20个：
     tasks = [get_jdzf(rrs=ranges), get_jndzf(rrs=ranges), get_cyrjg(rrs=ranges), get_gmbd(rrs=ranges),
@@ -627,4 +627,4 @@ if __name__ == '__main__':
     # csv 转成 xlsx 带上标题
     # to do
 
-    print(f"全部请求完成,耗时:[{time() - s_time:.2f}s].开始于:{s_time} 结束于:{time()}")
+    print(f"全部请求完成,耗时:[{time() - s_time:.2f}s].开始于:{s_time:.2f} 结束于:{time():.2f}")

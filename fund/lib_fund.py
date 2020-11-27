@@ -276,7 +276,8 @@ class libFund(MyLogger):
             if not res1:
                 res1 = ['未获取'] * 10
             if flag == 0:
-                res1_t = self.__re_fund_jdzf_title(content=content1)
+                content_t1 = self.__fund_request_by_code(code='000001', flag=5, method=1)
+                res1_t = self.__re_fund_jdzf_title(content=content_t1)
             # 季度/年涨幅
             content2 = self.__fund_request_by_code(code=code[i], flag=6, method=1)
             res2 = self.__re_fund_jndzf(content=content2)
@@ -284,7 +285,8 @@ class libFund(MyLogger):
             if not res2:
                 res2 = ['未获取'] * 16
             if flag == 0:
-                res2_t = self.__re_fund_jndzf_title(content=content2)
+                content_t2 = self.__fund_request_by_code(code='000001', flag=6, method=1)
+                res2_t = self.__re_fund_jndzf_title(content=content_t2)
             # 持有人结构
             content3 = self.__fund_request_by_code(code=code[i], flag=7, method=1)
             res3 = self.__re_fund_cyrjg(content=content3)
@@ -292,7 +294,8 @@ class libFund(MyLogger):
             if not res3:
                 res3 = ['未获取'] * 5
             if flag == 0:
-                res3_t = self.__re_fund_cyrjg_title(content=content3)
+                content_t3 = self.__fund_request_by_code(code='000001', flag=7, method=1)
+                res3_t = self.__re_fund_cyrjg_title(content=content_t3)
             res4_f.append(res1 + res2 + res3)
             flag += 1
 
@@ -325,7 +328,8 @@ class libFund(MyLogger):
             if not res1:
                 res1 = ['未获取'] * 8
             if flag == 0:
-                res1_t = self.__re_fund_gmbd_title(content=content1)
+                content_t1 = self.__fund_request_by_code(code='000001', flag=8, method=1)
+                res1_t = self.__re_fund_gmbd_title(content=content_t1)
 
             # 基金经理  http://fundf10.eastmoney.com/jjjl_270002.html
             content2 = self.__fund_request_by_code(code=code[i], flag=9, method=1)
@@ -333,8 +337,10 @@ class libFund(MyLogger):
             if not res2:
                 res2 = ['未获取'] * 6
             if flag == 0:
-                res2_t = self.__re_fund_jjjl_title(content=content2)
+                content_t2 = self.__fund_request_by_code(code='000001', flag=9, method=1)
+                res2_t = self.__re_fund_jjjl_title(content=content_t2)
             res_f.append(res1 + res2)
+            flag += 1
 
         res_f_t = res1_t + res2_t
         df_f = pd.DataFrame(res_f, columns=res_f_t)
@@ -350,14 +356,18 @@ class libFund(MyLogger):
         """
         # 特殊数据 http://fundf10.eastmoney.com/tsdata_270002.html
         res_f, res1_t = [], []
+        flag = 0
         for i in range(len(code)):
             self.logger.info(f"In func[{sys._getframe().f_code.co_name}]的第[{i+1}]个/共{len(code)}个 : current code:[{code[i]}]")
             content1 = self.__fund_request_by_code(code=code[i], flag=10, method=1)
             res1 = self.__re_fund_tsdata(content=content1)
             if not res1:
                 res1 = ['未获取'] * 2
-            res1_t = self.__re_fund_tsdata_title(content=content1)
+            if flag == 0:
+                content_t1 = self.__fund_request_by_code(code='000001', flag=10, method=1)
+                res1_t = self.__re_fund_tsdata_title(content=content_t1)
             res_f.append(res1)
+            flag += 1
 
         df_f = pd.DataFrame(res_f, columns=res1_t)
         # df_f.to_excel("fund_special_info.xlsx")
@@ -413,7 +423,9 @@ class libFund(MyLogger):
         fal.to_csv('funds_full_info.csv', mode='a+', index=False, header=False)
 
         # 转存xlsx+标题.写入xlsx失败没关系。csv有完整数据，再次保存进xlsx即可
+        # 如果出现: Duplicate names are not allowed. 说明colnums中有很多重复的字段，例如: - 。截取的code没有数据导致
         colnums = ['基金代码', '基金名称', '类型'] + t1 + t2 + t3
+        self.logger.info(colnums)
         fal_f = pd.read_csv('funds_full_info.csv', names=colnums, dtype=str)
         self.logger.info(fal_f)
         excel_name = 'funds_full_info.xlsx'
@@ -1031,7 +1043,7 @@ if __name__ == "__main__":
     # # 10.基金汇总保存进同一个csv + xlsx. 可以不连续请求。eg: 0:2 2:5 5:10分段
     # # 存在性能问题目前
     # to do : 排除债券型和货币型
-    ff.funds_full_info([1730, 1733])  # 20个400多s 10个200多s 20个720s
+    ff.funds_full_info([4084, 4085])  # 20个400多s 10个200多s 20个720s
 
     #10个：116。8s 20个：256s 3个 75s
     #极端： 20个： 832s 100个： 3464s
