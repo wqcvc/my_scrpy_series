@@ -1,9 +1,33 @@
 # -*- coding: utf-8 -*-
 """
  @Topic:fund相关操作和数据
-    eg. 1.展示单只实时
-        2.展示历史3，7，15天数据
-        3.展示过去5天总收益率
+  useage：
+    1.获取基金列表的实时涨跌幅
+      ff.fund_current_jjjz()
+    2.获取基金列表的持有收益率
+      ff.fund_rate_estimate()
+    3.获取基金列表的持有总金额 + 持有收益金额 + 实时估算收益
+      ff.fund_hold_info
+    4.单个基金股票前10数据 + 仓位占比重
+      ff.fund_hold_shares('163406')
+    5.单个基金的历史单位净值 + 历史净值 + 日收益率
+      ff.fund_history_jjjz('512000', 1)
+    6.全部基金列表: 基金名字 基金代码 类型
+      all_list = ff.funds_all_list(to_file=0)
+    7.历史各种涨幅数据 : 共31项 1-阶段涨幅(10项) 2-季度涨幅(8个季度) 3-年度涨幅(8年) 4-持有人结构(最近一期的5项数据)
+      sss1 = ff.fund_his_rates(['270002','161219'])
+    8.基础信息 : 规模变动信息（8个季度） + 基金经理任期管理信息（5项数据）
+      sss2 = ff.fund_basic_info(['270002','161219'])
+    9.基金特色数据: 标准差 + 夏普率。
+      sss3 = ff.fund_special_info(['000002'])
+    10.基金汇总保存进同一个csv + xlsx. 可以不连续请求。eg: 0:2 2:5 5:10分段
+    (重要：次函数存在性能问题。需要使用此功能请关注同目录下的 pypter_aysn.py 使用了协程异步请求，极大提高了请求效率)
+      ff.funds_full_info([0, 6945])
+    11.存储进mysql 和 读取出来
+      ff.db_save()/db_read()
+    12.定期更新数据库内容
+      to do
+    13.to be continue...图形界面 or web 展示，使用 vue or flask django
  @Date: 2020-9-15
  @Author: terry.wang
 """
@@ -23,6 +47,8 @@ import asyncio
 import pandas as pd
 import threading
 import sys
+from sqlalchemy import event, exc, select, orm, create_engine
+from urllib.parse import quote_plus
 
 
 # 装饰器:执行时间统计
@@ -266,7 +292,8 @@ class libFund(MyLogger):
         res4_f, res1_t, res2_t, res3_t = [], [], [], []
         flag = 0
         for i in range(len(code)):
-            self.logger.info(f"In func[{sys._getframe().f_code.co_name}]的第[{i+1}]个/共{len(code)}个 : current code:[{code[i]}]")
+            self.logger.info(
+                f"In func[{sys._getframe().f_code.co_name}]的第[{i + 1}]个/共{len(code)}个 : current code:[{code[i]}]")
             # 阶段涨幅
             content1 = self.__fund_request_by_code(code=code[i], flag=5, method=1)
             # 返回为Nonetype时候的处理
@@ -321,7 +348,8 @@ class libFund(MyLogger):
         res_f, res1_t, res2_t = [], [], []
         flag = 0
         for i in range(len(code)):
-            self.logger.info(f"In func[{sys._getframe().f_code.co_name}]的第[{i+1}]个/共{len(code)}个 : current code:[{code[i]}]")
+            self.logger.info(
+                f"In func[{sys._getframe().f_code.co_name}]的第[{i + 1}]个/共{len(code)}个 : current code:[{code[i]}]")
             # 规模变动  http://fundf10.eastmoney.com/gmbd_270002.html
             content1 = self.__fund_request_by_code(code=code[i], flag=8, method=1)
             res1 = self.__re_fund_gmbd(content=content1)
@@ -358,7 +386,8 @@ class libFund(MyLogger):
         res_f, res1_t = [], []
         flag = 0
         for i in range(len(code)):
-            self.logger.info(f"In func[{sys._getframe().f_code.co_name}]的第[{i+1}]个/共{len(code)}个 : current code:[{code[i]}]")
+            self.logger.info(
+                f"In func[{sys._getframe().f_code.co_name}]的第[{i + 1}]个/共{len(code)}个 : current code:[{code[i]}]")
             content1 = self.__fund_request_by_code(code=code[i], flag=10, method=1)
             res1 = self.__re_fund_tsdata(content=content1)
             if not res1:
@@ -993,19 +1022,62 @@ class libFund(MyLogger):
                 # writer.writerows(row)
         self.logger.info(f"read csv:[{csv_name}] finish...")
 
-    def db_save(self):
+    def db_save(self, dffile, totable, **configs):
         """
-        dataframe格式基金数据保存到DB数据库
-        :return:
+        dataframe格式基金数据完整保存到DB数据库
+        @param dffile: xlsx数据文件
+        @param totable: 存储到的数据库表table
+        @param configs: 连接数据库的配置，不传有默认本地配置
+        @return:
         """
-        pass
+        username = configs.get('username', 'root')
+        password = configs.get('password', 'km9m77wq123')
+        host = configs.get('host', '127.0.0.1')
+        assert host, 'host必填'
+        port = configs.get('port', '3306')
+        db = configs.get('db', 'fund') or configs.get('schema', 'fund')
+        if_exists = configs.get('if_exists', 'replace')
+        index = configs.get('index', False)
+        engine = create_engine(f"mysql+pymysql://{username}:{quote_plus(password)}@{host}:{port}/{db}?charset=utf8",
+                               echo=True,  # echo: 当设置为True时会将orm语句转化为sql语句打印，一般debug的时候可用
+                               pool_size=10,  # pool_size: 连接池的大小，默认为5个，设置为0时表示连接无限制
+                               pool_recycle=60 * 2,  # pool_recycle: 设置时间以限制数据库多久没连接自动断开
+                               pool_pre_ping=True
+                               )
+        # 2. pandas write to sql
+        df2 = pd.read_excel(dffile, dtype=str)
+        # 不储存index列.且table存在则 覆盖 写入
+        df2.to_sql(totable, engine, index=index, schema=db, if_exists=if_exists)
+        self.logger.info(f"write to db:[{db}:{totable}] success.!!!")
 
-    def db_read(self):
+    def db_read(self, selectable, **configs):
         """
-        从DB读取某项数据
-        :return:
+        基金数据从DB数据库全读取出来 返回dataframe格式
+        @param selectable: 读取的数据库表名
+        @param configs: 连接数据库的配置，不传有默认本地配置
+        @return:
         """
-        pass
+        username = configs.get('username', 'root')
+        password = configs.get('password', 'km9m77wq123')
+        host = configs.get('host', '127.0.0.1')
+        assert host, 'host必填'
+        port = configs.get('port', '3306')
+        db = configs.get('db', 'fund') or configs.get('schema', 'fund')
+        engine = create_engine(f"mysql+pymysql://{username}:{quote_plus(password)}@{host}:{port}/{db}?charset=utf8",
+                               echo=True,  # echo: 当设置为True时会将orm语句转化为sql语句打印，一般debug的时候可用
+                               pool_size=10,  # pool_size: 连接池的大小，默认为5个，设置为0时表示连接无限制
+                               pool_recycle=60 * 2,  # pool_recycle: 设置时间以限制数据库多久没连接自动断开
+                               pool_pre_ping=True
+                               )
+        # 1. pandas read sql
+        configs.get('sql')
+        query_sql = f'''
+         select * from {db}.{selectable};
+         '''
+        df = pd.read_sql_query(query_sql, engine)
+        self.logger.info(df)
+        self.logger.info(df.iloc[0, 1])
+        return df
 
     def data_show(self, show_type: str):
         """
@@ -1020,30 +1092,35 @@ if __name__ == "__main__":
     fund_code_list = ['512000', '270002']
     ff = libFund(level=logging.INFO)
 
-    # # 1.获取基金列表的实时涨跌幅
-    # ff.fund_current_jjjz()
-    # # 2.获取基金列表的持有收益率
-    # ff.fund_rate_estimate()
-    # # 3.获取基金列表的持有总金额 + 持有收益金额 + 实时估算收益
-    # ff.fund_hold_info
-    # # 4.单个基金股票前10数据 + 仓位占比重
-    # ff.fund_hold_shares('163406')
-    # # 5.单个基金的历史单位净值 + 历史净值 + 日收益率
-    # ff.fund_history_jjjz('512000', 1)
-    # # 6.全部基金列表: 基金名字 基金代码 类型
-    # all_list = ff.funds_all_list(to_file=0)
-    # print(all_list['name'][0])
-    # # 7.历史各种涨幅数据 : 共31项 1-阶段涨幅(10项) 2-季度涨幅(8个季度) 3-年度涨幅(8年) 4-持有人结构(最近一期的5项数据)
-    # sss1 = ff.fund_his_rates(['270002','161219'])
-    # # 8.基础信息 : 规模变动信息（8个季度） + 基金经理任期管理信息（5项数据）
-    # sss2 = ff.fund_basic_info(['270002','161219'])
-    # # 9.基金特色数据: 标准差 + 夏普率。
-    # sss3 = ff.fund_special_info(['000002'])
-
-    # # 10.基金汇总保存进同一个csv + xlsx. 可以不连续请求。eg: 0:2 2:5 5:10分段
-    # # 存在性能问题目前
-    # to do : 排除债券型和货币型
+    # 1.获取基金列表的实时涨跌幅
+    ff.fund_current_jjjz()
+    # 2.获取基金列表的持有收益率
+    ff.fund_rate_estimate()
+    # 3.获取基金列表的持有总金额 + 持有收益金额 + 实时估算收益
+    ff.fund_hold_info
+    # 4.单个基金股票前10数据 + 仓位占比重
+    ff.fund_hold_shares('163406')
+    # 5.单个基金的历史单位净值 + 历史净值 + 日收益率
+    ff.fund_history_jjjz('512000', 1)
+    # 6.全部基金列表: 基金名字 基金代码 类型
+    all_list = ff.funds_all_list(to_file=0)
+    print(all_list['name'][0])
+    # 7.历史各种涨幅数据 : 共31项 1-阶段涨幅(10项) 2-季度涨幅(8个季度) 3-年度涨幅(8年) 4-持有人结构(最近一期的5项数据)
+    sss1 = ff.fund_his_rates(['270002', '161219'])
+    # 8.基础信息 : 规模变动信息（8个季度） + 基金经理任期管理信息（5项数据）
+    sss2 = ff.fund_basic_info(['270002', '161219'])
+    # 9.基金特色数据: 标准差 + 夏普率。
+    sss3 = ff.fund_special_info(['000002'])
+    # 10.基金汇总保存进同一个csv + xlsx. 可以不连续请求。eg: 0:2 2:5 5:10分段
+    # 存在性能问题目前,使用 pypter_aysn.py协程并发极大提高效率。i5 cpu大概 27小时能更新完数据。之前需要100多个小时
     ff.funds_full_info([0, 6945])  # 20个400多s 10个200多s 20个720s
-
-    #10个：116。8s 20个：256s 3个 75s
-    #极端： 20个： 832s 100个： 3464s
+    # 11.保存数据库
+    sourcefile1 = 'funds_use_list.xlsx'
+    dstable1 = 'funds_use_list'
+    ff.db_save(dffile=sourcefile1, totable=dstable1, host='127.0.0.1', schema='fund')
+    sourcefile2 = 'funds_full_info.xlsx'
+    dstable2 = 'funds_full_info'
+    ff.db_save(dffile=sourcefile2, totable=dstable2)
+    # 12.从数据库读取数据
+    table = 'funds_full_info'
+    df_f_db = ff.db_read(selectable=table, schema='fund')

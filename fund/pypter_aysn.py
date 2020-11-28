@@ -107,7 +107,9 @@ def funds_all_list(to_file: int = 0):
     dd.to_excel('funds_use_list.xlsx', index=False)
     return dd
 
+
 la = funds_all_list()
+
 
 @retry(2, 5)
 async def get_jdzf(rrs: list):
@@ -151,7 +153,8 @@ async def get_jdzf(rrs: list):
             await page.evaluateOnNewDocument('() =>{ Object.defineProperties(navigator,'
                                              '{ webdriver:{ get: () => false } }) }')
             resp = await page.goto(url=url.replace('xxxxx', str(code_list[i])), timeout=60000)
-            print(f"func[{sys._getframe().f_code.co_name}]的第[{i+1}]个/共{len(code_list)}个 : current code:[{code_list[i]}]")
+            print(
+                f"func[{sys._getframe().f_code.co_name}]的第[{i + 1}]个/共{len(code_list)}个 : current code:[{code_list[i]}]")
             if resp.status != 200:
                 pass
             text = await page.content()
@@ -183,6 +186,7 @@ async def get_jdzf(rrs: list):
     df_f = pd.DataFrame(res4_f)
     # df_f.to_excel("fund_his_rates.xlsx")
     return df_f
+
 
 @retry(2, 5)
 async def get_jndzf(rrs: list):
@@ -225,7 +229,8 @@ async def get_jndzf(rrs: list):
             await page.evaluateOnNewDocument('() =>{ Object.defineProperties(navigator,'
                                              '{ webdriver:{ get: () => false } }) }')
             resp = await page.goto(url=url.replace('xxxxx', str(code_list[i])), timeout=60000)
-            print(f"func[{sys._getframe().f_code.co_name}]的第[{i+1}]个/共{len(code_list)}个 : current code:[{code_list[i]}]")
+            print(
+                f"func[{sys._getframe().f_code.co_name}]的第[{i + 1}]个/共{len(code_list)}个 : current code:[{code_list[i]}]")
             if resp.status != 200:
                 print(f"resp.status: [{resp.status}]")
                 pass
@@ -263,6 +268,7 @@ async def get_jndzf(rrs: list):
             print(f"[{sys._getframe().f_code.co_name}]=>error_info:[{err_info}]")
     df_f = pd.DataFrame(res4_f)
     return df_f
+
 
 @retry(2, 5)
 async def get_cyrjg(rrs: list):
@@ -305,7 +311,8 @@ async def get_cyrjg(rrs: list):
             await page.evaluateOnNewDocument('() =>{ Object.defineProperties(navigator,'
                                              '{ webdriver:{ get: () => false } }) }')
             resp = await page.goto(url=url.replace('xxxxx', str(code_list[i])), timeout=60000)
-            print(f"func[{sys._getframe().f_code.co_name}]的第[{i+1}]个/共{len(code_list)}个 : current code:[{code_list[i]}]")
+            print(
+                f"func[{sys._getframe().f_code.co_name}]的第[{i + 1}]个/共{len(code_list)}个 : current code:[{code_list[i]}]")
             if resp.status != 200:
                 pass
             text = await page.content()
@@ -331,6 +338,7 @@ async def get_cyrjg(rrs: list):
             print(f"[{sys._getframe().f_code.co_name}]=>error_info:[{err_info}]")
     df_f = pd.DataFrame(res4_f)
     return df_f
+
 
 @retry(2, 5)
 async def get_gmbd(rrs: list):
@@ -373,7 +381,8 @@ async def get_gmbd(rrs: list):
             await page.evaluateOnNewDocument('() =>{ Object.defineProperties(navigator,'
                                              '{ webdriver:{ get: () => false } }) }')
             resp = await page.goto(url=url.replace('xxxxx', str(code_list[i])), timeout=60000)
-            print(f"func[{sys._getframe().f_code.co_name}]的第[{i+1}]个/共{len(code_list)}个 : current code:[{code_list[i]}]")
+            print(
+                f"func[{sys._getframe().f_code.co_name}]的第[{i + 1}]个/共{len(code_list)}个 : current code:[{code_list[i]}]")
             if resp.status != 200:
                 pass
             text = await page.content()
@@ -401,6 +410,7 @@ async def get_gmbd(rrs: list):
             print(f"[{sys._getframe().f_code.co_name}]=>error_info:[{err_info}]")
     df_f = pd.DataFrame(res4_f)
     return df_f
+
 
 @retry(2, 5)
 async def get_jjjl(rrs: list):
@@ -443,7 +453,8 @@ async def get_jjjl(rrs: list):
             await page.evaluateOnNewDocument('() =>{ Object.defineProperties(navigator,'
                                              '{ webdriver:{ get: () => false } }) }')
             resp = await page.goto(url=url.replace('xxxxx', str(code_list[i])), timeout=60000)
-            print(f"func[{sys._getframe().f_code.co_name}]的第[{i+1}]个/共{len(code_list)}个 : current code:[{code_list[i]}]")
+            print(
+                f"func[{sys._getframe().f_code.co_name}]的第[{i + 1}]个/共{len(code_list)}个 : current code:[{code_list[i]}]")
             if resp.status != 200:
                 pass
             text = await page.content()
@@ -455,11 +466,16 @@ async def get_jjjl(rrs: list):
                 continue
             html = etree.HTML(text)
             xpath_rules = {
-                1: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/tbody/tr[1]/td[1]/text()',  # 起始期
-                2: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/tbody/tr[1]/td[2]/text()',  # 截止期
-                3: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/tbody/tr[1]/td[3]/a/text()',  # 基金经理
-                4: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/tbody/tr[1]/td[4]/text()',  # 任职时间
-                5: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/tbody/tr[1]/td[5]/text()',  # 任职回报
+                1: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/tbody/tr[1]/td[1]/text()',
+                # 起始期
+                2: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/tbody/tr[1]/td[2]/text()',
+                # 截止期
+                3: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/tbody/tr[1]/td[3]/a/text()',
+                # 基金经理
+                4: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/tbody/tr[1]/td[4]/text()',
+                # 任职时间
+                5: '//*[@id="bodydiv"]/div[8]/div[3]/div[2]/div[3]/div/div[1]/div/table/tbody/tr[1]/td[5]/text()',
+                # 任职回报
                 6: '//*[@id="bodydiv"]/div[8]/div[3]/div[1]/div[2]/p/label[1]/span/text()'  # 基金成立日期
             }
             listA = []
@@ -475,6 +491,7 @@ async def get_jjjl(rrs: list):
             print(f"[{sys._getframe().f_code.co_name}]=>error_info:[{err_info}]")
     df_f = pd.DataFrame(res4_f)
     return df_f
+
 
 @retry(2, 5)
 async def get_tsdata(rrs: list):
@@ -517,7 +534,8 @@ async def get_tsdata(rrs: list):
             await page.evaluateOnNewDocument('() =>{ Object.defineProperties(navigator,'
                                              '{ webdriver:{ get: () => false } }) }')
             resp = await page.goto(url=url.replace('xxxxx', str(code_list[i])), timeout=60000)
-            print(f"func[{sys._getframe().f_code.co_name}]的第[{i+1}]个/共{len(code_list)}个 : current code:[{code_list[i]}]")
+            print(
+                f"func[{sys._getframe().f_code.co_name}]的第[{i + 1}]个/共{len(code_list)}个 : current code:[{code_list[i]}]")
             if resp.status != 200:
                 pass
             text = await page.content()
@@ -574,26 +592,13 @@ async def get_html_1(url, timeout=10):
 
 if __name__ == '__main__':
     s_time = time()
-    # url_list = ["http://fundf10.eastmoney.com/jdzf_000179.html", "http://fundf10.eastmoney.com/jndzf_000179.html",
-    #             "http://fundf10.eastmoney.com/tsdata_000204.html", "http://fundf10.eastmoney.com/cyrjg_000179.html",
-    #             "http://fundf10.eastmoney.com/gmbd_000179.html", "http://fundf10.eastmoney.com/jjjl_000179.html",
-    #             ]  # , "http://www.10010.com/net5/011/", "http://python.jobbole.com/87541/"
-    # tasks = [get_html(url_list[0]), get_html(url_list[1]), get_html(url_list[2]), get_html(url_list[3]), get_html(url_list[4]),get_html(url_list[5])]
-
     ranges = [0, 6945]
     # 10个：62s 20个：116s 100个：1335s 600个 9172s  15s/个
-    # 极端： 5个 128s 20个：
     tasks = [get_jdzf(rrs=ranges), get_jndzf(rrs=ranges), get_cyrjg(rrs=ranges), get_gmbd(rrs=ranges),
              get_jjjl(rrs=ranges), get_tsdata(rrs=ranges)]
 
     loop = asyncio.get_event_loop()
-
-    # loop.run_until_completrun_until_completee(get_html(url_list[0]))
-    # loop.(get_html(url_list[1]))
-    # loop.run_until_complete(get_html(url_list[2]))
-    # loop.run_until_complete(get_html(url_list[3]))
     # loop.run_until_complete(get_html(url_list[4]))
-
     # results = loop.run_until_complete(asyncio.gather(*task))
     # tasks = [(get_html(url)) for url in url_list]
     # cost 24s
@@ -602,30 +607,15 @@ if __name__ == '__main__':
     results = loop.run_until_complete(
         asyncio.gather(*tasks))  # loop.run_until_complete() 既可以接收一个协程对象, 也可以接收一个 future 对象
 
-    # # cost 35s
     # asyncio.get_event_loop().run_until_complete(get_html(url_list[0]))
-    # asyncio.get_event_loop().run_until_complete(get_html(url_list[1]))
-    # asyncio.get_event_loop().run_until_complete(get_html(url_list[2]))
-    # asyncio.get_event_loop().run_until_complete(get_html(url_list[3]))
-    # asyncio.get_event_loop().run_until_complete(get_html(url_list[4]))
-    # asyncio.get_event_loop().run_until_complete(get_html(url_list[5]))
-
     # loop.close()
 
-    # 合并6组数据
-    # for res in results:
-    #     print(res)
-    # print(results[0],results[1],results[2],results[3],results[4],results[5])
-    # print(la)
     dd = la.iloc[ranges[0]:ranges[1]]
     dd.index = range(len(dd))
-    # print(dd)
-
     # 合并数据写入funds_full_info.csv
-    fal = pd.concat([dd,results[0],results[1],results[2],results[3],results[4],results[5]], axis=1)
+    fal = pd.concat([dd, results[0], results[1], results[2], results[3], results[4], results[5]], axis=1)
     fal.to_csv('funds_full_info.csv', mode='a+', index=False, header=False)
 
     # csv 转成 xlsx 带上标题
     # to do
-
     print(f"全部请求完成,耗时:[{time() - s_time:.2f}s].开始于:{s_time:.2f} 结束于:{time():.2f}")
