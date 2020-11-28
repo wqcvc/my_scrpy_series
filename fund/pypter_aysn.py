@@ -113,6 +113,7 @@ la = funds_all_list()
 async def get_jdzf(rrs: list):
     global la
     code_list = la['基金代码'].tolist()
+    print(f"code_list length is: [{len(code_list)}]")
     if rrs:
         code_list = code_list[rrs[0]:rrs[1]]
         # 复制并更新索引
@@ -579,7 +580,7 @@ if __name__ == '__main__':
     #             ]  # , "http://www.10010.com/net5/011/", "http://python.jobbole.com/87541/"
     # tasks = [get_html(url_list[0]), get_html(url_list[1]), get_html(url_list[2]), get_html(url_list[3]), get_html(url_list[4]),get_html(url_list[5])]
 
-    ranges = [4085, 4285]
+    ranges = [0, 6945]
     # 10个：62s 20个：116s 100个：1335s 600个 9172s  15s/个
     # 极端： 5个 128s 20个：
     tasks = [get_jdzf(rrs=ranges), get_jndzf(rrs=ranges), get_cyrjg(rrs=ranges), get_gmbd(rrs=ranges),
