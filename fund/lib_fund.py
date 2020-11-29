@@ -28,6 +28,8 @@
     12.定期更新数据库内容
       to do
     13.to be continue...图形界面 or web 展示，使用 vue or flask django
+    14.基金公司排名+规模等信息
+    15.画图 pandas matlab
  @Date: 2020-9-15
  @Author: terry.wang
 """
@@ -278,6 +280,48 @@ class libFund(MyLogger):
 
         return quote_info_list
 
+    def fund_company_info(self):
+        """
+        返回所有基金公司的各种信息:名字 规模 成立日期 排名等
+        :return:
+        """
+        url = "http://fund.eastmoney.com/company/default.html"
+        resp = asyncio.get_event_loop().run_until_complete(self.scrpy.pyppeteer_method(url=url))
+        df_cominfo = self.__re_company_info(resp)
+
+        df_f = pd.DataFrame(df_cominfo, columns=['基金公司', '成立时间', '全部管理规模(亿)', '全部基金数', '全部经理数'])
+        self.logger.info(df_f)
+        return df_f
+
+    def __re_company_info(self, content):
+        """
+        使用xpath匹配基金公司排名
+        :param content: 网页内容，需要解析的
+        :return:
+        """
+        if content is None:
+            return
+        html = etree.HTML(content)
+        xpath_rules = {
+            1: '//*[@id="gspmTbl"]/tbody/tr[1]/td[2]/a/text()',  # 公司名字  //*[@id="gspmTbl"]/tbody/tr[2]/td[2]/a tr+
+            2: '//*[@id="gspmTbl"]/tbody/tr[1]/td[4]/text()',  # 成立时间   //*[@id="gspmTbl"]/tbody/tr[2]/td[4]
+            3: '//*[@id="gspmTbl"]/tbody/tr[1]/td[6]/p/text()',  # 管理规模   //*[@id="gspmTbl"]/tbody/tr[2]/td[6]/p/text()
+            4: '//*[@id="gspmTbl"]/tbody/tr[1]/td[7]/a/text()',  # 管理数量
+            5: '//*[@id="gspmTbl"]/tbody/tr[1]/td[8]/a/text()'  # 经理数量
+        }
+        # 基金公司全排名。共 159家公司
+        listA = []
+        for i in range(159):
+            list_t = []
+            for k in range(len(xpath_rules)):
+                res = html.xpath(xpath_rules[k+1].replace('tr[1]', f"tr[{i + 1}]"))
+                if not res:
+                    listA.append('-')
+                else:
+                    list_t.append(res[0])
+            listA.append(list_t)
+        return listA
+
     def fund_his_rates(self, code: list):
         """
         各种涨幅
@@ -330,13 +374,6 @@ class libFund(MyLogger):
         df_f = pd.DataFrame(res4_f, columns=res_f_t)
         # df_f.to_excel("fund_his_rates.xlsx")
         return df_f, res_f_t
-
-    def fund_company_info(self, name: str):
-        """
-        返回所有基金公司的各种信息:名字 规模 成立日期 排名等
-        :param name:
-        :return:
-        """
 
     def fund_basic_info(self, code: list):
         """
@@ -1092,35 +1129,42 @@ if __name__ == "__main__":
     fund_code_list = ['512000', '270002']
     ff = libFund(level=logging.INFO)
 
-    # 1.获取基金列表的实时涨跌幅
-    ff.fund_current_jjjz()
-    # 2.获取基金列表的持有收益率
-    ff.fund_rate_estimate()
-    # 3.获取基金列表的持有总金额 + 持有收益金额 + 实时估算收益
-    ff.fund_hold_info
-    # 4.单个基金股票前10数据 + 仓位占比重
-    ff.fund_hold_shares('163406')
-    # 5.单个基金的历史单位净值 + 历史净值 + 日收益率
-    ff.fund_history_jjjz('512000', 1)
-    # 6.全部基金列表: 基金名字 基金代码 类型
-    all_list = ff.funds_all_list(to_file=0)
-    print(all_list['name'][0])
-    # 7.历史各种涨幅数据 : 共31项 1-阶段涨幅(10项) 2-季度涨幅(8个季度) 3-年度涨幅(8年) 4-持有人结构(最近一期的5项数据)
-    sss1 = ff.fund_his_rates(['270002', '161219'])
-    # 8.基础信息 : 规模变动信息（8个季度） + 基金经理任期管理信息（5项数据）
-    sss2 = ff.fund_basic_info(['270002', '161219'])
-    # 9.基金特色数据: 标准差 + 夏普率。
-    sss3 = ff.fund_special_info(['000002'])
-    # 10.基金汇总保存进同一个csv + xlsx. 可以不连续请求。eg: 0:2 2:5 5:10分段
-    # 存在性能问题目前,使用 pypter_aysn.py协程并发极大提高效率。i5 cpu大概 27小时能更新完数据。之前需要100多个小时
-    ff.funds_full_info([0, 6945])  # 20个400多s 10个200多s 20个720s
-    # 11.保存数据库
-    sourcefile1 = 'funds_use_list.xlsx'
-    dstable1 = 'funds_use_list'
-    ff.db_save(dffile=sourcefile1, totable=dstable1, host='127.0.0.1', schema='fund')
-    sourcefile2 = 'funds_full_info.xlsx'
-    dstable2 = 'funds_full_info'
-    ff.db_save(dffile=sourcefile2, totable=dstable2)
-    # 12.从数据库读取数据
-    table = 'funds_full_info'
-    df_f_db = ff.db_read(selectable=table, schema='fund')
+    # # 1.获取基金列表的实时涨跌幅
+    # ff.fund_current_jjjz()
+    # # 2.获取基金列表的持有收益率
+    # ff.fund_rate_estimate()
+    # # 3.获取基金列表的持有总金额 + 持有收益金额 + 实时估算收益
+    # ff.fund_hold_info
+    # # 4.单个基金股票前10数据 + 仓位占比重
+    # ff.fund_hold_shares('163406')
+    # # 5.单个基金的历史单位净值 + 历史净值 + 日收益率
+    # ff.fund_history_jjjz('512000', 1)
+    # # 6.全部基金列表: 基金名字 基金代码 类型
+    # all_list = ff.funds_all_list(to_file=0)
+    # print(all_list['name'][0])
+    # # 7.历史各种涨幅数据 : 共31项 1-阶段涨幅(10项) 2-季度涨幅(8个季度) 3-年度涨幅(8年) 4-持有人结构(最近一期的5项数据)
+    # sss1 = ff.fund_his_rates(['270002', '161219'])
+    # # 8.基础信息 : 规模变动信息（8个季度） + 基金经理任期管理信息（5项数据）
+    # sss2 = ff.fund_basic_info(['270002', '161219'])
+    # # 9.基金特色数据: 标准差 + 夏普率。
+    # sss3 = ff.fund_special_info(['000002'])
+    # # 10.基金汇总保存进同一个csv + xlsx. 可以不连续请求。eg: 0:2 2:5 5:10分段
+    # # 存在性能问题目前,使用 pypter_aysn.py协程并发极大提高效率。i5 cpu大概 27小时能更新完数据。之前需要100多个小时
+    # ff.funds_full_info([0, 6945])  # 20个400多s 10个200多s 20个720s
+    # # 11.保存数据库
+    # sourcefile1 = 'funds_use_list.xlsx'
+    # dstable1 = 'funds_use_list'
+    # ff.db_save(dffile=sourcefile1, totable=dstable1, host='127.0.0.1', schema='fund')
+    # sourcefile2 = 'funds_full_info.xlsx'
+    # dstable2 = 'funds_full_info'
+    # ff.db_save(dffile=sourcefile2, totable=dstable2)
+    # # 12.从数据库读取数据
+    # table = 'funds_full_info'
+    # df_f_db = ff.db_read(selectable=table, schema='fund')
+
+    # 13.基金公司排名+管理规模等信息
+    cominfo = ff.fund_company_info()
+    sourcefile3 = 'funds_company_info.xlsx'
+    dstable3 = 'funds_company_info'
+    cominfo.to_excel(sourcefile3)
+    ff.db_save(dffile=sourcefile3, totable=dstable3, host='127.0.0.1', schema='fund')

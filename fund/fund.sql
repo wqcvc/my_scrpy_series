@@ -24,6 +24,7 @@ drop table fund.funds_use_list;
 select * from fund.funds_full_info;
 drop table fund.funds_full_inf0;
 
+select * from fund.funds_company_info;
 
 
 
