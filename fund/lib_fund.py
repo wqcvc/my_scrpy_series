@@ -1161,10 +1161,10 @@ if __name__ == "__main__":
     # # 12.从数据库读取数据
     # table = 'funds_full_info'
     # df_f_db = ff.db_read(selectable=table, schema='fund')
-
-    # 13.基金公司排名+管理规模等信息
-    cominfo = ff.fund_company_info()
-    sourcefile3 = 'funds_company_info.xlsx'
-    dstable3 = 'funds_company_info'
-    cominfo.to_excel(sourcefile3)
-    ff.db_save(dffile=sourcefile3, totable=dstable3, host='127.0.0.1', schema='fund')
+    #
+    # # 13.基金公司排名+管理规模等信息
+    # cominfo = ff.fund_company_info()
+    # sourcefile3 = 'funds_company_info.xlsx'
+    # dstable3 = 'funds_company_info'
+    # cominfo.to_excel(sourcefile3)
+    # ff.db_save(dffile=sourcefile3, totable=dstable3, host='127.0.0.1', schema='fund')
