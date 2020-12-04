@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Flask Html Title</title>
+    <script type="text/javascript">
+        src ="{{ url_for('index',filename = 'hello.js') }}"
+    </script>
+</head>
+<body>
+我的Flask模版html内容
+    <br/>{{my_str}}}
+    <br/>{{my_int}}}
+    <br/>{{my_dict}}}
+    <br/>{{my_list}}}
+    <br/><input type="button" onclick="sayHello()" value="{{my_str}}"} />
+</body>
+</html>

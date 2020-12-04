@@ -274,53 +274,6 @@ import time
 import re
 
 
-async def main():
-    start = time.time()
-    launch_args = {
-        "headless": True,  # 关闭无头浏览器
-        "dumpio": True,
-        "args": [
-            "--start-maximized",
-            "--no-sandbox",
-            "--disable-infobars",
-            "--ignore-certificate-errors",
-            "--log-level=3",
-            "--enable-extensions",
-            "--window-size=1920,1080",
-            "--refer=https://0722.91p51.com/video.php?category=rf&page=1",
-            "--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36",
-        ],
-    }
-    browser = await launch(**launch_args)
-    page = await browser.newPage()
-    res = await page.goto(
-        'https://0722.91p51.com/view_video.php?viewkey=ebaec4277896006083f7&page=1&viewtype=basic&category=rf',
-        timeout=360000)  # 跳转
-    # 'https://www.baidu.com', options={'timeout': 30000})  # 跳转
-    await page.screenshot({'path': 'example.png'})  # 截图
-
-    res.text()
-    page.title()
-    page.content()
-    page.cookies()
-
-    print(await page.content())
-    # dimensions = await page.evaluate('document.write(strencode("9d806mYY9cYo7oWqKCrILLKHOS+fFbBXCabDhAGK0/NfD6ALbTWDbdE3JSmdqNqE3G6D7Ai+CdGjjPE1bwhQ7m6G/vvYQmEu9+d49O3Ng6FKV/HLUV+W94+oKYp0PffPULwNxi3WAWChd9VW4mn/TEkk4LuMlUt8O31MwUI7+eKahSXGYg/Sc7kMKUuVNvY3JqyiLKgwqV46pRTB2mcHWnZ6L5x82hTwz7iWOYUx281x+Uf3THSAIYi+4/1Lxu5A42BfH0mMhCA","aSx2RlI1EzNjMBsVVAIaSAFxGnkoBAp+AyoSDBwPEDIPCwk8CwUSMnxCABAmZXk6AAwWdC8dfUkFBwpUPwoWMFEfd3RncicbEzIvOz5gMUQAGlk4ZTlSK2MgMBEdOjIMd0c2fW8IUCM9XHcmGGsCJwM6fWNtcEMlKmtBAgQPEjo2fBh8LgAKZhJldgAyYToSUF00azAAPR9RJyMINT5NYS1dVQAjExt4cj0NFCcHGiY7Ih8lLWBSHxINPwQDDB90HTQ3HSgDIUMiOm5XKj8OKmFfWj8BAwsEGGALSmQ9bTQeBAovAg86CmBvUk1JHSR4Dg4BNCogCkxQZ107IiEFL1BfLg0SZ1U7ChsACS5CBAs=","9d806mYY9cYo7oWqKCårILLKHOS+fFbBXCabDhAGK0/NfD6ALbTWDbdE3JSmdqNqE3G6D7Ai+CdGjjPE1bwhQ7m6G/vvYQmEu9+d49O3Ng6FKV/HLUV+W94+oKYp0PffPULwNxi3WAWChd9VW4mn/TEkk4LuMlUt8O31MwUI7+eKahSXGYg/Sc7kMKUuVNvY3JqyiLKgwqV46pRTB2mcHWnZ6L5x82hTwz7iWOYUx281x+Uf3THSAIYi+4/1Lxu5A42BfH0mMhCA2"));')
-    #
-    # print(dimensions)
-    #  </script><source src="http://cfdc.91p52.com//mp43/398448.mp4?st=6Ta5l-nsLaLzyTZ-yCqXGQ&amp;f=3b26v3jC54hMPtndpdcyh05/AuOKuhPemII6Umr52vsXuwE2iZJcnkgLEAKsT5PNBHVH2ALPBQDURu9EmJmaE6DRCXlnAFS2IHUw+Jo" type="video/mp4">
-    url_re = re.findall('http.?://.*.91p\d{2}.com/.?mp43/.*.mp4\\?.*=.*f=[^"]*', str(await page.content()))
-    tittle = re.findall(r'<h4 class="login_register_header" align=left>(.*?)</h4>', str(await page.content()), re.S)
-    img_url = re.findall(r'poster="(.*?)"', str(await page.content()))
-
-    await browser.close()  # 关闭
-
-    end = time.time()
-
-    print(f"total run seconds: [{end - start}]")
-    return url_re, tittle, img_url
-
-
 #
 # s1,s2,s3=asyncio.get_event_loop().run_until_complete(main())
 # print(f"ssss is :{s1,s2,s3}")
@@ -356,21 +309,22 @@ import lzma
 # ts_res = ts.get_hist_data('000001', '2020-06-01', '2020-11-08')
 # ts_res.to_excel('000001.xlsx')
 
-a = [['a', '1.2', '4.2'], ['b', '70', '0.03'], ['x', '5', '0']]
-df = pd.DataFrame(a, columns=['one', 'two', 'three'])
-df.to_excel('000002.xlsx',index=False)
+dsd = '未获取'
+list_trt = [dsd] * 16;
+print(list_trt)
 
-import  json
+import os
+print(os.getenv("HOME"))
 
-s='var r = [["980003","TPYLGYGDCYZ","太平洋六个月滚动持有债","债券型","TAIPINGYANGLIUGEYUEGUNDONGCHIYOUZHAI"],["000001","HXCZHH","华夏成长混合","混合型","HUAXIACHENGZHANGHUNHE"]];'
+def is_true(s, default='FALSE'):
+    return os.getenv(s, default) in ['TRUE', 'True', 'true', '1']
 
-rules="\"(.*?)\",\".*?\",\"(.*?)\",\"(.*?)\",\".*?\""
+DEBUG = is_true('DEBUG', default='TRUE')
+print(DEBUG)
+print(os.getenv("DEBUG"))
 
-s2 =  re.findall(rules,s)
-
-print(s2)
-print(s2[0][1])
-print(s2[1][0])
-
+ENVIRON = os.getenv('ENVIRON')
+print(ENVIRON)
+print(os.getenv("ENVIRON"))
 
 
