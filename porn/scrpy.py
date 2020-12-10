@@ -53,17 +53,20 @@ class My91DownLoad(MyLogger):
         if not os.path.exists(self.storage_dir):
             os.makedirs(self.storage_dir)
 
-    def start_by_number(self, number: int = 0):
+    def start_by_number(self, number: int = 0, method: int = 0):
         """
         统一开始请求+下载入口
         :type number: int 下载个数，超过每页24 自动翻页
+        @param method: 方式：0-pypuppter方式 1-request+strencode加密解密方式
         :return:
         """
         list_urls = self.fetch_subpage_urls(number)
-
-        # list_videos, list_titles, list_images = self.fetch_video_urls(list_urls)
-        list_videos, list_titles = self.fetch_video_urls_new(list_urls)
-
+        if method == 0:
+            list_videos, list_titles = self.fetch_video_urls_new(list_urls)
+        elif method == 1:
+            list_videos, list_titles = self.fetch_video_urls(list_urls)
+        else:
+            self.logger.info(f"Unknown method.check args:method value")
         # 可以考虑使用多线程下载
         # threads=5
         # for i in range(threads):
@@ -71,16 +74,23 @@ class My91DownLoad(MyLogger):
         #     t.start()
         # for in range(threads):
         #     t.join()
+        self.logger.info(f"list_titles and list_videos : [{list_titles}]\n [{list_videos}]")
         self.download_videos(title_lists=list_titles, video_lists=list_videos)
 
-    def start_by_page(self, page: int):
+    def start_by_page(self, page: int, method: int = 0):
         """
         从指定页数统一开始请求+下载
-        :type page: int 页数
-        :return:
+        @param page: 第几页页数开始下载
+        @param method: 方式：0-pypuppter方式 1-request+strencode加密解密方式
+        @return:
         """
         list_urls = self.fetch_specific_page(page=page)
-        list_videos, list_titles = self.fetch_video_urls_new(list_urls)
+        if method == 0:
+            list_videos, list_titles = self.fetch_video_urls_new(list_urls)
+        elif method == 1:
+            list_videos, list_titles = self.fetch_video_urls(list_urls)
+        else:
+            self.logger.info(f"Unknown method.check args:method value")
         self.download_videos(title_lists=list_titles, video_lists=list_videos)
 
     def fetch_subpage_urls(self, number: int = 0):
@@ -128,122 +138,110 @@ class My91DownLoad(MyLogger):
         # // *[ @ id = "wrapper"] / div[1] / div[2] / div / div / div[1] / div / a
         # / html / body / div[4] / div[1] / div[2] / div / div / div[1] / div / a
 
-    # def fetch_video_urls(self, listA: list, retry_times: int = 0):
-    #     """
-    #     详情页入口:获取所有子详情页对应的各种类型下载urls
-    #     :param listA:
-    #     :return:返回存储了video title img的lists
-    #     @param listA: 存储子详情页urls链接的列表
-    #     @param retry_times: 重试次数
-    #     """
-    #     self.logger.info(f"start request subpages:get video urls.")
-    #     video_lists = []
-    #     title_lists = []
-    #     image_lists = []
-    #     for i in range(len(listA)):
-    #         self.logger.info(f"\n")
-    #         self.logger.info(f"开始请求第[{i + 1}]个subpage===>")
-    #         ua = UserAgent()
-    #         #  获取等video url 404: 需要解决这里的 cookies等加上获取等内容 == request获取内容
-    #         # referer need user subpage url
-    #         headers = {
-    #             'Accept-Language': 'zh-CN,zh;q=0.9',
-    #             'User-Agent': ua.random,
-    #             'referer': listA[i],
-    #             'Content-Type': 'multipart/form-data; session_language=cn_CN',
-    #             'Connection': 'keep-alive',
-    #             'Upgrade-Insecure-Requests': '1',
-    #         }
-    #
-    #         res2 = requests.request('GET', listA[i], headers=headers)
-    #         if res2.status_code != 200:
-    #             self.logger.info(f"subpage url:[{listA[i]}] retrun an Error: status_code:[{res2.status_code}]")
-    #             with open(self._current_day + '_request_subpage_failed.log', 'w', encoding='utf-8') as f:
-    #                 f.write(f"\n请求失败的subpage_url:[{listA[i]}]\n\n")
-    #         else:
-    #             self.logger.info(f"subpage url:[{listA[i]}],status_code: [{res2.status_code}]")
-    #             pass
-    #
-    #         # with open(self.log_dir+'/'+self._current_day+'_debug.log','a',encoding='utf-8') as f:
-    #         #     f.write("\n\n\n\n\n\n\n\n\n\n\n"+res2.text)
-    #         #     f.write("=====================================================================================\n\n\n\n\n\n")
-    #
-    #         '''
-    #         need match url:
-    #         https://cfdc.91p52.com//mp43/394884.mp4?st=7g3X27wzvJ7trgWsrD04bw&f=21721FpSf29IlSEb1YBEyXegQozQ/0IPjvl7vGtDcx/0ljKiZNttL3wXA6rpuzFY81JgyEK3GFC3Ig7KNcBKFbHKNCi14clux519OA
-    #         http://ccn.91p52.com//mp43/394860.mp4?st=R6_UOfDg2oetpIKj-ALfGw&f=deaakSKNEsavSOcP5BiYu05HKa5+t5KvygkmIQTso6/XsDrgsX0HUtOaUvRsaYQvYuWoYCEv3UHhxsPi6o6RP2rCfhqVM9asxzgfhA
-    #         http://v2.91p48.com/mp43/394859.mp4?secure=qIlFsnni3ERBZn52NxRK6w==,1599661756&f=b7dbK/zaJ8gdvNiYWVv/J+qZmLqhem3UeY3xjwuPAvPjQwedTjlW+zrtInhUwFEOUY5WIBYkRZORX/OTCDmartj1XFHkDlRSeTD/VlARECVpzh5eeOX/l6svuQc
-    #         '''
-    #         # fecth video
-    #         viode_re_rules = [
-    #             'http.?://.*.91p\d{2}.com/.?mp43/.*.mp4\\?.*=.*&f=[^"]*',
-    #             'http.?://.*.91p48.com//mp43/.*.mp4\\?secure=.*&f=[^"]*'
-    #         ]
-    #         url_re = re.findall(viode_re_rules[0], str(res2.text))
-    #         # url_re = re.findall(config['video_urls']['video_rule'], str(res2.text))
-    #         url_re = list(set(url_re))
-    #
-    #         if url_re:
-    #             video_url = url_re[0]
-    #             self.logger.info(f"第{i + 1}个re video url:[{video_url}]")
-    #             video_lists.append(video_url)
-    #
-    #         else:
-    #             self.logger.info(f"re video url failed.try use strencode method.")
-    #             '''如果正常匹配条件没匹配到对应的视频url,则尝试匹配strencode函数解析对应视频url'''
-    #             strencode = re.findall(r'document.write\(strencode\("(.*)"', str(res2.text))
-    #             if not strencode:
-    #                 self.logger.info(
-    #                     f"第{i + 1}个url:re and strencode() both failed.more details see error log:{self._current_day + '_parse_video_url_error.log'}")
-    #                 with open(self.log_dir + "/" + self._current_day + '_error.log', "a", encoding='utf-8') as f:
-    #                     f.write(f"\n请求时间:[{self._current_time}]\n")
-    #                     f.write(f"正则匹配和strencode都失败subpage_url:[{listA[i]}]\n")
-    #                     f.write(res2.text)
-    #                     f.write("===============================================================================\n")
-    #                 continue
-    #             else:
-    #                 # re match failed,but get strencode()
-    #                 self.logger.info(f"第{i + 1}个url:strencode() rematch success.")
-    #                 self.logger.info(f"strencode args:{strencode}")
-    #                 temp = strencode[0].split(',')
-    #                 input = temp[0].replace('"', '')
-    #                 encode_key = temp[1].replace('"', '')
-    #                 video_url_strencode = self.__strdecode(input=input, key=encode_key)
-    #                 self.logger.info(f"第{i + 1}个strencode video_url is:[{video_url_strencode}]")
-    #                 video_lists.append(video_url_strencode)
-    #
-    #             # fetch title
-    #             tittle = re.findall(r'<h4 class="login_register_header" align=left>(.*?)</h4>', res2.text, re.S)
-    #             temp_t = tittle[0].replace('\n', '')
-    #             tittle_f = temp_t.replace(' ', '')
-    #             self.logger.info(f"tiltle is:{tittle_f}")
-    #             # fetch img
-    #             img_url = re.findall(r'poster="(.*?)"', str(res2.text))
-    #             self.logger.debug(f"img_url is:{img_url}")
-    #             image_lists.append(img_url)
-    #             title_lists.append(tittle_f)
-    #
-    #         time.sleep(3)
-    #
-    #     self.logger.info(f"共请求{len(listA)}个,成功请求[{len(video_lists)}]个...")
-    #     with open(self.log_dir + '/' + self._current_day + '_video_lists.log', "w", encoding='utf-8') as f:
-    #         f.write(self._current_time + ':\n')
-    #         for v in range(len(video_lists)):
-    #             f.write(title_lists[v] + "\n" + video_lists[v] + "\n")
-    #
-    #     # if retry_times == 0:
-    #     #     pass
-    #     # else:
-    #     #     for r in range(retry_times):
-    #     #         self.logger.info(f"开始第[{r + 1}]次重试")
-    #
-    #     return video_lists, title_lists, image_lists
+    def fetch_video_urls(self, listA: list, retry_times: int = 0):
+        """
+        详情页入口:获取所有子详情页对应的各种类型下载urls
+        :param listA:
+        :return:返回存储了video title img的lists
+        @param listA: 存储子详情页urls链接的列表
+        @param retry_times: 重试次数
+        """
+        self.logger.info(f"start request subpages:get video urls.")
+        video_lists = []
+        title_lists = []
+        for i in range(len(listA)):
+            self.logger.info(f"\n")
+            self.logger.info(f"开始请求第[{i + 1}]个subpage===>")
+            ua = UserAgent()
+            #  获取等video url 404: 需要解决这里的 cookies等加上获取等内容 == request获取内容
+            # referer need user subpage url
+            headers = {
+                'Accept-Language': 'zh-CN,zh;q=0.9',
+                'User-Agent': ua.random,
+                'referer': listA[i],
+                'Content-Type': 'multipart/form-data; session_language=cn_CN',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+            }
+
+            res2 = requests.request('GET', listA[i], headers=headers)
+            if res2.status_code != 200:
+                self.logger.info(f"subpage url:[{listA[i]}] retrun an Error: status_code:[{res2.status_code}]")
+                with open(self._current_day + '_request_subpage_failed.log', 'w', encoding='utf-8') as f:
+                    f.write(f"\n请求失败的subpage_url:[{listA[i]}]\n\n")
+            else:
+                self.logger.info(f"subpage url:[{listA[i]}],status_code: [{res2.status_code}]")
+                pass
+
+            # fecth video
+            viode_re_rules = [
+                'http.?://.*.91p\d{2}.com/.?mp43/.*.mp4\\?.*=.*&f=[^"]*',
+                'http.?://.*.91p48.com//mp43/.*.mp4\\?secure=.*&f=[^"]*'
+            ]
+            url_re = re.findall(viode_re_rules[0], str(res2.text))
+            # url_re = re.findall(config['video_urls']['video_rule'], str(res2.text))
+            url_re = list(set(url_re))
+
+            if url_re:
+                video_url = url_re[0]
+                self.logger.info(f"第{i + 1}个re video url:[{video_url}]")
+                video_lists.append(video_url)
+
+            else:
+                self.logger.info(f"re video url failed.try use strencode method.")
+                '''如果正常匹配条件没匹配到对应的视频url,则尝试匹配strencode函数解析对应视频url'''
+                strencode = re.findall(r'document.write\(strencode\("(.*)"', str(res2.text))
+                if not strencode:
+                    self.logger.info(
+                        f"第{i + 1}个url:re and strencode() both failed.more details see error log:{self._current_day + '_parse_video_url_error.log'}")
+                    with open(self.log_dir + "/" + self._current_day + '_error.log', "a", encoding='utf-8') as f:
+                        f.write(f"\n请求时间:[{self._current_time}]\n")
+                        f.write(f"正则匹配和strencode都失败subpage_url:[{listA[i]}]\n")
+                        f.write(res2.text)
+                        f.write("===============================================================================\n")
+                    continue
+                else:
+                    # re match failed,but get strencode()
+                    self.logger.info(f"第{i + 1}个url:strencode() rematch success.")
+                    self.logger.info(f"strencode args:{strencode}")
+                    temp = strencode[0].split(',')
+                    input = temp[0].replace('"', '')
+                    encode_key = temp[1].replace('"', '')
+                    video_url_strencode = self.strdecode(input=input, key=encode_key)
+                    self.logger.info(f"第{i + 1}个strencode解析出来的video_url:[{video_url_strencode}]")
+                    video_lists.append(video_url_strencode)
+
+                # fetch title
+                html = etree.HTML(res2.text)
+                tittle_tmp = html.xpath('//*[@id="videodetails"]/h4/text()')
+                temp_t = tittle_tmp[0].replace('\n', '')
+                tittle_f = temp_t.replace(' ', '')
+                rstr = r"[\/\\\:\*\?\"\<\>\|]"  # '/ \ : * ? " < > |'
+                tittle_f = re.sub(rstr, "_", tittle_f)  # 替换为下划线
+                self.logger.info(f"获取到的tiltle是:[{tittle_f}]")
+                title_lists.append(tittle_f)
+
+            time.sleep(3)
+
+        self.logger.info(f"共请求{len(listA)}个,成功请求[{len(video_lists)}]个...")
+        #保存video url到 csv文件
+        save_file_name = self.log_dir + '/' + self._current_day + '_video_lists.csv'
+        with open(save_file_name,'a+',encoding='utf-8-sig',newline='') as f:
+            writer = csv.writer(f,dialect='excel')
+            writer.writerow(['标题title','视频链接video_url'])
+        with open(save_file_name, "a+", encoding='utf-8-sig') as f:
+            tmp_list = [title_lists, video_lists];
+            writer = csv.writer(f, dialect='excel')
+            writer.writerow(tmp_list)
+        self.logger.info(f"已保存title+video信息到文件到当日csv...")
+
+        return video_lists, title_lists
 
     def download_videos(self, video_lists: list, title_lists: list):
         """
         下载所有video
         :param video_lists:存储了视频下载urls的列表
-        :param title_lists:存储了对应的标题名字的列表
+        :param title_lists:存储了对应的标题 名字的列表
         :return:
         """
         assert video_lists, "video_lists为空, 请检查"
@@ -261,24 +259,11 @@ class My91DownLoad(MyLogger):
             ua = UserAgent()
             headers = {
                 'User-Agent': ua.random,
-                # 'Host': 'cfdc.91p52.com',
-                # 'Accept': ''
-                # 'Accept - Encoding': 'gzip, deflate, br',
-                # 'Accept - Language': 'zh - CN, zh;q = 0.9, en;q = 0.8',
-                # 'Cache - Control': 'max - age = 0',
-                # 'Connection': 'keep-alive',
-                # 'Range': 'bytes=0-16092',
-                # 'Sec-Fetch-Dest': 'document',
-                # 'Sec-Fetch-Mode': 'navigate',
-                # 'Sec-Fetch-Site': 'none',
-                # 'Sec-Fetch-User': '?1',
-                # 'Upgrade - Insecure - Requests': '1',
-                'Referer': self._favo_video_url,
-                # 'cookie':'',
+                'Referer': self._favo_video_url
             }
             self.logger.info(f"共[{len(video_lists)}]个/第[{i + 1}]个\n[{title_lists[i]}]\n[{video_lists[i]}]\n")
             try:
-                res3 = requests.request('GET', url=video_lists[i], headers=headers, timeout=600)
+                res3 = requests.request('GET', url=video_lists[i], headers=headers, timeout=300)
                 total_length = int(res3.headers.get("Content-Length"))
                 self.logger.info(f"文件大小:[{total_length // (1024 * 1024)}]M.")
             except Exception as error_info:
@@ -319,7 +304,8 @@ class My91DownLoad(MyLogger):
         """
         pass
 
-    def __strdecode(self, input, key):
+    @staticmethod
+    def strdecode(input, key):
         """
         页面JS函数strencode()的解密函数
         :param input: strencode第一个参数
@@ -455,10 +441,7 @@ class My91DownLoad(MyLogger):
                     continue
                 else:
                     pass
-                # fetch title
-                # tittle = re.findall(r'<h4 class="login_register_header" align=left>(.*?)</h4>', res2.text, re.S)
-                # temp_t = tittle[0].replace('\n', '')
-                # tittle_f = temp_t.replace(' ', '')
+
                 html = etree.HTML(res2.text)
                 tittle_tmp = html.xpath('//*[@id="videodetails"]/h4/text()')
                 temp_t = tittle_tmp[0].replace('\n', '')
@@ -477,7 +460,6 @@ class My91DownLoad(MyLogger):
 
                     with open(save_file_name, "a+", encoding='utf-8-sig') as f:
                         tmp_list = [tittle_f, video_f];
-                        # f.write(tittle_f + "\n" + video_f + "\n")
                         writer = csv.writer(f,dialect='excel')
                         writer.writerow(tmp_list)
                     self.logger.info(f"已保存title+video信息到文件到当日csv...")

@@ -16,11 +16,11 @@ UPDATE fund.student1 SET age='22' WHERE name='wq';
 # fund库
 CREATE SCHEMA `fund` ;
 
-select * from fund.funds_use_list; where 基金代码=163406;
-drop table fund.funds_use_list;
+select * from fund.funds_use_list limit 10000; where 基金代码=163406;
+#drop table fund.funds_use_list;
 
-select * from fund.funds_full_info;
-drop table fund.funds_full_inf0;
+select * from fund.funds_full_info limit 10000;
+#drop table fund.funds_full_inf0;
 
 select * from fund.funds_company_info;
 
