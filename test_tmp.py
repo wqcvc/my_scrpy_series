@@ -327,4 +327,32 @@ ENVIRON = os.getenv('ENVIRON')
 print(ENVIRON)
 print(os.getenv("ENVIRON"))
 
+def scope_test():
+    """this is a simple example class to test __doc__"""
+    def do_local():
+        spam = "local spam"
+
+    def do_nonlocal():
+        nonlocal spam
+        spam = "nonlocal spam"
+
+    def do_global():
+        global spam
+        spam = "global spam"
+
+    def __doc__():
+        print("this is a simple example class to test __doc__")
+
+    spam = "test spam"
+    do_local()
+    print("In scope_test class....")
+    print("After local assignment:", spam)
+    do_nonlocal()
+    print("After nonlocal assignment:", spam)
+    do_global()
+    print("After global assignment:", spam)
+
+mm = scope_test()
+print(mm.__doc__)
+print("In global scope:", spam)
 
