@@ -74,13 +74,13 @@ def quick_sort(li):
 
 #  4.选择排序 O(n²)-O(n²)
 def select_sort(li):
-    assert li,"li为空，请检查"
+    assert li, "li为空，请检查"
     for i in range(len(li)):
         min = i  # min 不能设置为 li[i]
-        for j in range(i+1,len(li)):
+        for j in range(i + 1, len(li)):
             if li[min] > li[j]:
                 min = j
-        li[min],li[i] = li[i],li[min]
+        li[min], li[i] = li[i], li[min]
     print(li)
 
 
@@ -91,7 +91,7 @@ def select_sort(li):
 def bucket_Sort(li):
     maxnum = max(li)
 
-    bucket_li = [0] * (maxnum+1)
+    bucket_li = [0] * (maxnum + 1)
 
     for i in li:
         bucket_li[i] += 1
@@ -107,14 +107,16 @@ def bucket_Sort(li):
 
 # bucket_Sort(listA)
 
-listB = [8,4,3,1]
+listB = [8, 4, 3, 1]
+
+
 #  1. 冒泡排序 O(n²)-O(n)
 #  相邻2个挨个比较更换顺序
 def bubble_sort2(li):
     for i in range(len(li)):
-        for j in range(len(li)-1):
-            if li[j+1] < li[j]:
-                li[j+1],li[j] = li[j],li[j+1]
+        for j in range(len(li) - 1):
+            if li[j + 1] < li[j]:
+                li[j + 1], li[j] = li[j], li[j + 1]
                 print(li)
     print(li)
 
@@ -125,12 +127,12 @@ def bubble_sort2(li):
 # 排序区与 未排序区
 def insert_sort2(li):
     for i in range(len(li)):
-        j = i -1
+        j = i - 1
         k = li[i]
-        while j>=0 and li[j] > k:
-            li[j+1] = li[j]
+        while j >= 0 and li[j] > k:
+            li[j + 1] = li[j]
             li[j] = k
-            j-=1
+            j -= 1
         print(li)
     print(li)
 
@@ -150,6 +152,7 @@ def quick_sort2(li):
 
         return quick_sort(less) + [flag] + quick_sort(greater)
 
+
 # print(quick_sort2(listB))
 
 
@@ -158,10 +161,10 @@ def quick_sort2(li):
 def select_sort2(li):
     for i in range(len(li)):
         min = i
-        for j in range(i,len(li)):
+        for j in range(i, len(li)):
             if li[min] > li[j]:
                 min = j
-        li[min],li[i] = li[i],li[min]
+        li[min], li[i] = li[i], li[min]
     print(li)
     print("xxx")
 
@@ -189,7 +192,121 @@ def bucket_sort2(li):
     print("x2x2x2")
 
 
-listC = [6,4,3,8,7,1,26]
-bucket_sort2(listC)
+listC = [6, 4, 3, 8, 7, 1, 26]
 
 
+# bucket_sort2(listC)
+
+# 查找： 顺序查找 二分查找
+#####################################################
+
+def bubble_sort3(li):
+    for i in range(len(li)):
+        for j in range(len(li) - 1):
+            if li[j + 1] < li[j]:
+                li[j + 1], li[j] = li[j], li[j + 1]
+            print(li)
+    print(li)
+
+
+listD = [8, 4, 1, 3, 2, 5]
+
+
+# bubble_sort3(listD)
+
+
+def insert_sort3(li):
+    for i in range(len(li)):
+        flag = li[i]
+        j = i - 1
+        while j >= 0 and li[j] > flag:
+            li[j + 1] = li[j]
+            li[j] = flag
+            j -= 1
+    print(li)
+
+
+# insert_sort3(listD)
+
+
+def select_sort3(li):
+    for i in range(len(li)):
+        min = i
+        for j in range(i, len(li)):
+            if li[min] > li[j]:
+                min = j
+        li[min], li[i] = li[i], li[min]
+    print(li)
+
+
+# select_sort3(listD)
+
+def quick_sort3(li):
+    lls = len(li)
+    if lls <= 1:
+        return li
+    else:
+        flag = li[0]
+        less = [x for x in li[1:] if flag >= x]
+        greater = [x for x in li[1:] if flag < x]
+        print("quick sort")
+        return quick_sort3(less) + [flag] + quick_sort3(greater)
+
+
+# print(quick_sort3(listD))
+
+
+def bucket_sort3(li):
+    num = max(li)
+
+    bucket = [0] * (num + 1)
+
+    for i in li:
+        bucket[i] += 1
+
+    sort = []
+    for j in range(len(bucket)):
+        if bucket[j] != 0:
+            for x in range(bucket[j]):
+                sort.append(j)
+    print(sort)
+
+
+# bucket_sort3(listD)
+
+#  查找算法
+#  顺序查找
+#  二分查找
+
+def sequential_search(li,key):
+    flag = False
+    for i in range(len(li)):
+        if li[i] == key:
+            flag = True
+
+    return flag
+
+listF = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,17,18,19]
+key = 12
+# print(sequential_search(listF,key))
+
+
+def twoway_search(li,target):
+    lls = len(li)
+    left = 0
+    right = lls-1
+    while left <= right:
+        middle = (left+right)//2
+        if li[middle] > target:
+            right = middle - 1
+        elif li[middle] < target:
+            left = middle + 1
+        else:
+            return f"target location is: [{middle}]"
+
+    return -1
+
+print(twoway_search(listF,key))
+
+
+#  斐波拉切
