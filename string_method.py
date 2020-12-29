@@ -17,6 +17,7 @@ class Solution2:
         while s in sequence:
             flag+=1
             s+=word
+            print(s)
         return flag
 
     def maxRepeating3(self, sequence: str, word: str) -> int:
@@ -36,7 +37,7 @@ ss1 = "aaabaaaabaaabaaaabaaaabaaaabaaaaba"
 ss2 = "aaaba"
 
 ss3 = Solution2()
-ress3 = ss3.maxRepeating3(ss1,ss2)
+ress3 = ss3.maxRepeating2(ss1,ss2)
 print(ress3)
 
 # 2. 字符串反转

@@ -191,85 +191,65 @@ def bucket_sort2(li):
     print(sort)
     print("x2x2x2")
 
-
 listC = [6, 4, 3, 8, 7, 1, 26]
-
-
 # bucket_sort2(listC)
 
 # 查找： 顺序查找 二分查找
 #####################################################
 
+listD = [8, 4, 1, 3, 2, 5]
 def bubble_sort3(li):
     for i in range(len(li)):
-        for j in range(len(li) - 1):
-            if li[j + 1] < li[j]:
-                li[j + 1], li[j] = li[j], li[j + 1]
-            print(li)
+        for j in range(len(li)):
+            if li[j] > li[i]:
+                li[j],li[i] = li[i],li[j]
+    print("bubble_sort3 : listD")
     print(li)
-
-
-listD = [8, 4, 1, 3, 2, 5]
-
 
 # bubble_sort3(listD)
 
-
 def insert_sort3(li):
     for i in range(len(li)):
-        flag = li[i]
+        var =  li[i]
         j = i - 1
-        while j >= 0 and li[j] > flag:
-            li[j + 1] = li[j]
-            li[j] = flag
+        while j>=0 and li[j] < var:
+            li[j+1] = li[j]
+            li[j] = var
             j -= 1
+    print("insert_sort3 listdddD")
     print(li)
 
-
 # insert_sort3(listD)
-
 
 def select_sort3(li):
     for i in range(len(li)):
         min = i
-        for j in range(i, len(li)):
+        for j in range(i,len(li)):
             if li[min] > li[j]:
                 min = j
-        li[min], li[i] = li[i], li[min]
+        li[min],li[i] = li[i],li[min]
+    print("select_sort3 listDDDDD")
     print(li)
-
 
 # select_sort3(listD)
 
+
 def quick_sort3(li):
-    lls = len(li)
-    if lls <= 1:
+    length = len(li)
+    if length <=1:
         return li
     else:
         flag = li[0]
-        less = [x for x in li[1:] if flag >= x]
-        greater = [x for x in li[1:] if flag < x]
-        print("quick sort")
+        less = [x for x in li[1:] if x<flag]
+        greater = [x for x in li[1:] if x> flag ]
         return quick_sort3(less) + [flag] + quick_sort3(greater)
 
+print(f"quick_sort3:"+str(quick_sort3(listD)))
 
-# print(quick_sort3(listD))
 
 
 def bucket_sort3(li):
-    num = max(li)
-
-    bucket = [0] * (num + 1)
-
-    for i in li:
-        bucket[i] += 1
-
-    sort = []
-    for j in range(len(bucket)):
-        if bucket[j] != 0:
-            for x in range(bucket[j]):
-                sort.append(j)
-    print(sort)
+    ...
 
 
 # bucket_sort3(listD)
@@ -278,7 +258,7 @@ def bucket_sort3(li):
 #  顺序查找
 #  二分查找
 
-def sequential_search(li,key):
+def sequential_search(li, key):
     flag = False
     for i in range(len(li)):
         if li[i] == key:
@@ -286,27 +266,76 @@ def sequential_search(li,key):
 
     return flag
 
-listF = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,17,18,19]
-key = 12
-# print(sequential_search(listF,key))
 
-
-def twoway_search(li,target):
-    lls = len(li)
+listF = [1, 2, 3, 4, 5,6,7,8,9,10]
+key = 10
+# 二分查找
+def search_half(li:list,target):
+    lenth = len(li)
     left = 0
-    right = lls-1
-    while left <= right:
-        middle = (left+right)//2
+    right = lenth - 1
+    while right >= left:
+        middle = (right + left) // 2
         if li[middle] > target:
             right = middle - 1
         elif li[middle] < target:
             left = middle + 1
         else:
-            return f"target location is: [{middle}]"
-
+            print(f"target location is: [{middle}]")
+            return
     return -1
+# search_half(listF,key)
 
-print(twoway_search(listF,key))
+
+# 闰年
+def runnian(year):
+    if (year % 4 == 0 and year % 100 != 0) or year % 400 == 0:
+        print(f"year:[{year}] 是闰年！")
+    else:
+        print("xxxx")
 
 
-#  斐波拉切
+# runnian(1900)
+
+
+# 质数
+
+def zhishu(num: int):
+    if num > 1:
+        for i in range(2, num):
+            if num % i == 0:
+                print(f"not zhishu")
+                break
+            else:
+                print("yes zhishu")
+                break
+
+
+# zhishu(22)
+
+
+# 斐波拉切数列
+def fib_func(n:int):
+    if n == 1 or n == 2:
+        return 1
+    else:
+        return fib_func(n-1) + fib_func(n-2)
+
+
+fib_list = [0]
+for i in range(1,10):
+    fib_list.append(fib_func(i))
+# print(fib_list)
+
+
+
+
+
+
+
+
+
+
+
+
+
