@@ -5,12 +5,6 @@
 
 # 1. 字符串查找： A 中 find B 次数
 class Solution2:
-    def maxRepeating(self, sequence: str, word: str) -> int:
-        times = 0
-        if word in sequence:
-            times = sequence.count(word)
-        return times
-
     def maxRepeating2(self, sequence: str, word: str) -> int:
         flag = 0
         s = word
@@ -19,16 +13,6 @@ class Solution2:
             s+=word
             print(s)
         return flag
-
-    def maxRepeating3(self, sequence: str, word: str) -> int:
-        res = 0
-        for i in range(len(sequence)//len(word)+1):
-            temp = word *(i+1)
-            print(temp)
-            if temp in sequence:
-                res += 1
-            else:
-                return res
 
 
 

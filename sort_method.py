@@ -244,12 +244,31 @@ def quick_sort3(li):
         greater = [x for x in li[1:] if x> flag ]
         return quick_sort3(less) + [flag] + quick_sort3(greater)
 
-print(f"quick_sort3:"+str(quick_sort3(listD)))
+# print(f"quick_sort3:"+str(quick_sort3(listD)))
 
 
 
 def bucket_sort3(li):
-    ...
+    length = max(li)
+
+    buckect_list = [0] * (length + 1 )
+    for i in li:
+        buckect_list[i] += 1
+
+    sort = []
+    for i in range(len(buckect_list)):
+        if buckect_list[i] != 0:
+            for j in range(buckect_list[i]):
+                sort.append(i)
+
+    print("DDDDD")
+    print(sort)
+
+
+bucket_sort3(listD)
+
+
+
 
 
 # bucket_sort3(listD)

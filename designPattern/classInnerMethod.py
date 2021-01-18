@@ -211,7 +211,8 @@ print(f"type of Person3: [{type(Person3)}]")
 
 
 """
-  lambda 列表推导式
+  lambda匿名函数  
+  []列表推导式
 """
 add = lambda x,y:x+y
 print(add(2,3))

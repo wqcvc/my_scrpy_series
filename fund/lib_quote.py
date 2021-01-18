@@ -42,7 +42,7 @@ class LibQuote(MyLogger):
             if code[i][0:3] in ('000', '002',
                                 '300'):  # 深市000 中小板002 创业板300   http://quote.eastmoney.com/sz002002.html
                 curr_url = self.url_xxx.replace("xxxxxx", 'sz' + code[i])
-            elif code[i][0:3] in '600':  # 沪市600   http://quote.eastmoney.com/sh600600.html
+            elif code[i][0:3] in ('600', '601', '603'):  # 沪市600 601 603  http://quote.eastmoney.com/sh600600.html
                 curr_url = self.url_xxx.replace("xxxxxx", 'sh' + code[i])
             elif code[i][0:3] in '688':  # 科创板688  http://quote.eastmoney.com/kcb/688300.html
                 curr_url = self.url_xxx.replace("xxxxxx", '/kcb/' + code[i])
