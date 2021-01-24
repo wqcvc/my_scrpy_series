@@ -1138,7 +1138,7 @@ if __name__ == "__main__":
     # # 4.单个基金股票前10数据 + 仓位占比重
     # ff.fund_hold_shares('001695')
     # # 5.单个基金的历史单位净值 + 历史净值 + 日收益率
-    ff.fund_history_jjjz('163406', 20)
+    ff.fund_history_jjjz('161725', 20)
     # # 6.全部基金列表: 基金名字 基金代码 类型
     # all_list = ff.funds_all_list(to_file=0)
     # print(all_list['name'][0])
