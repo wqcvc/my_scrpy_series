@@ -290,15 +290,16 @@ class libFund(MyLogger):
         """
         assert code, "基金代码必传"
         url = 'http://finance.sina.com.cn/fund/quotes/xxxxxx/bc.shtml'
-        url = url.replace("xxxxxx",code)
+        url = url.replace("xxxxxx", code)
         resp = self.scrpy.request_method(url)
-        quote_info_list =  self.__match_quote_list(resp)
+        # resp = asyncio.get_event_loop().run_until_complete(self.scrpy.pyppeteer_method(url=url))
+        quote_info_list = self.__match_quote_list(resp)
 
         x = 0.0
         for i in range(len(quote_info_list)):
             self.logger.info(f"[{i + 1}]:{quote_info_list[i]}")
             if i != 0:
-                x += float(quote_info_list[i][5].replace('%', ''))
+                x += float(quote_info_list[i][1].replace('%', ''))
         self.logger.info(f"前十重仓占比总仓位比例:[{x:.2f}]")
 
         """
@@ -307,36 +308,27 @@ class libFund(MyLogger):
 
         return quote_info_list
 
-    def __re_quote_hold(self, content):
+    def __match_quote_list(self, content):
         """
         使用xpath匹配基金的股票持仓,市值,涨跌幅等信息
         :param content: 网页内容，需要解析的
         :return:
         """
         html = etree.HTML(content)
-        # html = etree.parse(content, etree.HTMLParser()) #文件
         xpath_rules = {
-            1: '//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[1]/text()',  # 序号
-            2: '//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[2]/a/text()',  # 股票代码
-            3: '//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[3]/a/text()',  # 股票名称
-            4: '//*[@id="dq600030"]/text()',  # 最新价 //*[@id="dq600030"]
-            5: '//*[@id="zd600030"]/text()',  # 涨跌幅
-            6: '//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[7]/text()',  # 持仓占比
-            7: '//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[8]/text()',  # 持仓股数万
-            8: '//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[9]/text()'  # 持仓市值
+            1: '//*[@id="fund_sdzc_table"]/tbody/tr[1]/td[1]/a/text()',
+            # name  //*[@id="fund_sdzc_table"]/tbody/tr[2]/td[1]/a
+            # 2: '//*[@id="fund_sdzc_table"]/tbody/tr[1]/td[2]/text()',    # price //*[@id="fund_sdzc_table"]/tbody/tr[2]/td[2]
+            2: '//*[@id="fund_sdzc_table"]/tbody/tr[1]/td[4]/text()'
+            # rate  //*[@id="fund_sdzc_table"]/tbody/tr[2]/td[4]
         }
 
         # @herf : 链接 text() 文本
-        listA = [['序号', '代码', '名称', '股价', '涨跌幅', '占比', '万股数', '市值']]
+        listA = [['名称', '占比']]
         for k in range(10):
             listB = []
-            for i in range(8):
-                if i + 1 == 4:
-                    res = html.xpath(xpath_rules[i + 1].replace('dq600030', f"dq{listB[1]}"))
-                elif i + 1 == 5:
-                    res = html.xpath(xpath_rules[i + 1].replace('zd600030', f"zd{listB[1]}"))
-                else:
-                    res = html.xpath(xpath_rules[i + 1].replace('tr[1]', f"tr[{k + 1}]"))
+            for i in range(2):
+                res = html.xpath(xpath_rules[i + 1].replace('tr[1]', f"tr[{k + 1}]"))
                 listB.append(res[0])
             listA.append(listB)
 
@@ -376,7 +368,7 @@ class libFund(MyLogger):
         for i in range(159):
             list_t = []
             for k in range(len(xpath_rules)):
-                res = html.xpath(xpath_rules[k+1].replace('tr[1]', f"tr[{i + 1}]"))
+                res = html.xpath(xpath_rules[k + 1].replace('tr[1]', f"tr[{i + 1}]"))
                 if not res:
                     listA.append('-')
                 else:
@@ -569,32 +561,35 @@ class libFund(MyLogger):
         if not qlist:
             qlist = self.fund_list
 
-        quo_dict = {'名称(代码)':['价格','比例']}
+        # quo_dict = {'名称': '比例'}
+        quo_dict = {}
         for i in range(len(qlist)):
             res_tmp = self.fund_hold_shares2(qlist[i])
             res_tmp = res_tmp[1:]
             for j in range(len(res_tmp)):
-                name = str(res_tmp[j][2]) + "(" + str(res_tmp[j][1]) + ")"
-                price = res_tmp[j][3]
-                hld_rate = res_tmp[j][5]
-                # print(name,price,hld_rate)
+                name = res_tmp[j][0]
+                hld_rate = res_tmp[j][1]
                 if name not in quo_dict:  # quo_dict.keys()
-                    quo_dict[name] = [price,hld_rate]
+                    quo_dict[name] = hld_rate
                     # 加 异常处理  有的持仓数据找不到 LOF的找不到数据在 http://fundf10.eastmoney.com/ccmx_163406.html
                 elif name in quo_dict:
-                    old_rate = quo_dict[name][1]
-                    old_rate = Decimal(old_rate.replace("%",""))
-                    hld_rate = Decimal(hld_rate.replace("%",""))
+                    old_rate = quo_dict[name]
+                    old_rate = Decimal(old_rate.replace("%", ""))
+                    hld_rate = Decimal(hld_rate.replace("%", ""))
                     curr_rate = str(old_rate + hld_rate) + "%"
-                    quo_dict[name] = [price,curr_rate]
-                    print(old_rate,hld_rate,curr_rate)
+                    quo_dict[name] = curr_rate
+                    print(old_rate, hld_rate, curr_rate)
                 else:
                     self.logger.info(f"unexpected error...")
 
-        self.logger.info(quo_dict)
-        for k,v in quo_dict.items():
-            print(k,v[0],v[1])
+        # self.logger.info(quo_dict)
+        # for k, v in quo_dict.items():
+        #     print(k, v)
         # 根据比例进行排序
+        sss2 = sorted(quo_dict.items(), key=lambda quo_dict: float(quo_dict[1].replace("%", "")), reverse=True)
+        print(type(sss2))
+        for k in sss2:
+            print(k)
         return quo_dict
 
     def update_funds_mysqldata(self):
@@ -1194,7 +1189,7 @@ class libFund(MyLogger):
         @param configs: 连接数据库的配置，不传有默认本地配置
         @return:
         """
-        username = configs.get('username','root')
+        username = configs.get('username', 'root')
         password = configs.get('password', 'km9m77wq123')
         host = configs.get('host', '127.0.0.1')
         assert host, 'host必填'
