@@ -51,6 +51,7 @@ import threading
 import sys
 from sqlalchemy import event, exc, select, orm, create_engine
 from urllib.parse import quote_plus
+from decimal import Decimal
 
 
 # 装饰器:执行时间统计
@@ -280,6 +281,67 @@ class libFund(MyLogger):
 
         return quote_info_list
 
+    @retry(2, 5)
+    def fund_hold_shares2(self, code: str):
+        """
+        单个基金持仓股票及其实时涨跌幅,采用新浪财经的数据
+        http://finance.sina.com.cn/fund/quotes/512000/bc.shtml
+        :return: 基金的前10持仓股票的基本信息列表
+        """
+        assert code, "基金代码必传"
+        url = 'http://finance.sina.com.cn/fund/quotes/xxxxxx/bc.shtml'
+        url = url.replace("xxxxxx",code)
+        resp = self.scrpy.request_method(url)
+        quote_info_list =  self.__match_quote_list(resp)
+
+        x = 0.0
+        for i in range(len(quote_info_list)):
+            self.logger.info(f"[{i + 1}]:{quote_info_list[i]}")
+            if i != 0:
+                x += float(quote_info_list[i][5].replace('%', ''))
+        self.logger.info(f"前十重仓占比总仓位比例:[{x:.2f}]")
+
+        """
+        to do: 前10股票占比例
+        """
+
+        return quote_info_list
+
+    def __re_quote_hold(self, content):
+        """
+        使用xpath匹配基金的股票持仓,市值,涨跌幅等信息
+        :param content: 网页内容，需要解析的
+        :return:
+        """
+        html = etree.HTML(content)
+        # html = etree.parse(content, etree.HTMLParser()) #文件
+        xpath_rules = {
+            1: '//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[1]/text()',  # 序号
+            2: '//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[2]/a/text()',  # 股票代码
+            3: '//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[3]/a/text()',  # 股票名称
+            4: '//*[@id="dq600030"]/text()',  # 最新价 //*[@id="dq600030"]
+            5: '//*[@id="zd600030"]/text()',  # 涨跌幅
+            6: '//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[7]/text()',  # 持仓占比
+            7: '//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[8]/text()',  # 持仓股数万
+            8: '//*[@id="cctable"]/div[1]/div/table/tbody/tr[1]/td[9]/text()'  # 持仓市值
+        }
+
+        # @herf : 链接 text() 文本
+        listA = [['序号', '代码', '名称', '股价', '涨跌幅', '占比', '万股数', '市值']]
+        for k in range(10):
+            listB = []
+            for i in range(8):
+                if i + 1 == 4:
+                    res = html.xpath(xpath_rules[i + 1].replace('dq600030', f"dq{listB[1]}"))
+                elif i + 1 == 5:
+                    res = html.xpath(xpath_rules[i + 1].replace('zd600030', f"zd{listB[1]}"))
+                else:
+                    res = html.xpath(xpath_rules[i + 1].replace('tr[1]', f"tr[{k + 1}]"))
+                listB.append(res[0])
+            listA.append(listB)
+
+        return listA
+
     def fund_company_info(self):
         """
         返回所有基金公司的各种信息:名字 规模 成立日期 排名等
@@ -500,6 +562,7 @@ class libFund(MyLogger):
     def fund_quohld_cal(self, qlist: list = None):
         """
         持仓所有基金前十重仓统计重叠系数 及 持有比例 金额数据
+        请求网站: http://finance.sina.com.cn/fund/quotes/512000/bc.shtml
         :param clist: 基金代码列表,不传默认使用json数据
         :return: 历史day天的净值 日增长率等信息等列表
         """
@@ -508,24 +571,31 @@ class libFund(MyLogger):
 
         quo_dict = {'名称(代码)':['价格','比例']}
         for i in range(len(qlist)):
-            res_tmp = self.fund_hold_shares(qlist[i])
+            res_tmp = self.fund_hold_shares2(qlist[i])
             res_tmp = res_tmp[1:]
             for j in range(len(res_tmp)):
                 name = str(res_tmp[j][2]) + "(" + str(res_tmp[j][1]) + ")"
                 price = res_tmp[j][3]
                 hld_rate = res_tmp[j][5]
-                print(name,price,hld_rate)
+                # print(name,price,hld_rate)
                 if name not in quo_dict:  # quo_dict.keys()
                     quo_dict[name] = [price,hld_rate]
                     # 加 异常处理  有的持仓数据找不到 LOF的找不到数据在 http://fundf10.eastmoney.com/ccmx_163406.html
                 elif name in quo_dict:
                     old_rate = quo_dict[name][1]
-                    print(old_rate)
-                    quo_dict[name] = [price,old_rate+hld_rate]
+                    old_rate = Decimal(old_rate.replace("%",""))
+                    hld_rate = Decimal(hld_rate.replace("%",""))
+                    curr_rate = str(old_rate + hld_rate) + "%"
+                    quo_dict[name] = [price,curr_rate]
+                    print(old_rate,hld_rate,curr_rate)
                 else:
                     self.logger.info(f"unexpected error...")
 
         self.logger.info(quo_dict)
+        for k,v in quo_dict.items():
+            print(k,v[0],v[1])
+        # 根据比例进行排序
+        return quo_dict
 
     def update_funds_mysqldata(self):
         """
@@ -1169,7 +1239,7 @@ if __name__ == "__main__":
     # ff.fund_hold_info
 
     # # 4.单个基金股票前10数据 + 仓位占比重
-    ff.fund_hold_shares('163406')
+    # ff.fund_hold_shares('163406')
 
     # # 5.单个基金的历史单位净值 + 历史净值 + 日收益率
     # ff.fund_history_jjjz('161725', 20)
@@ -1211,4 +1281,5 @@ if __name__ == "__main__":
     # ff.db_save(dffile=sourcefile3, totable=dstable3, host='127.0.0.1', schema='fund')
 
     # 14.统计持仓所有的基金中前十重仓股的相关系数 比例 及 持有金额
+    # fund_code_list2 = ['512000', '512000','512000']
     ff.fund_quohld_cal()
