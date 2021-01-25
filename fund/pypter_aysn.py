@@ -15,6 +15,7 @@ import sys
 
 Response = namedtuple("rs", "title url html cookies headers history status")
 
+common_useragent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36"
 
 # 装饰器: retry重试函数
 def retry(max_retries, count_down):
@@ -52,10 +53,10 @@ def request_method(url):
     :param url:
     :return:
     """
-    ua = UserAgent()
+    # ua = UserAgent()
     headers = {
         'refer': 'http://fund.eastmoney.com/',
-        'User-Agent': ua.random
+        'User-Agent': common_useragent
     }
     start_time = time()
     resp = requests.request(method="GET", url=url, headers=headers)
@@ -127,7 +128,7 @@ async def get_jdzf(rrs: list):
     for i in range(len(code_list)):
         try:
             start_time = time()
-            ua = UserAgent()
+            # ua = UserAgent()
             launch_args = {
                 'headless': True,
                 'args': [
@@ -144,7 +145,7 @@ async def get_jdzf(rrs: list):
                     "–-single-process"
                     # "--enable-extensions",
                     # "--window-size=1920,1080",
-                    f'\"--user-agent={ua.random}\"',
+                    f'\"--user-agent={common_useragent}\"',
                 ],
                 'dumpio': True,  # 解决浏览器多开卡死
             }
@@ -203,7 +204,7 @@ async def get_jndzf(rrs: list):
     for i in range(len(code_list)):
         try:
             start_time = time()
-            ua = UserAgent()
+            # ua = UserAgent()
             launch_args = {
                 'headless': True,
                 'args': [
@@ -220,7 +221,7 @@ async def get_jndzf(rrs: list):
                     "–-single-process"
                     # "--enable-extensions",
                     # "--window-size=1920,1080",
-                    f'\"--user-agent={ua.random}\"',
+                    f'\"--user-agent={common_useragent}\"',
                 ],
                 'dumpio': True,  # 解决浏览器多开卡死
             }
@@ -285,7 +286,7 @@ async def get_cyrjg(rrs: list):
     for i in range(len(code_list)):
         try:
             start_time = time()
-            ua = UserAgent()
+            # ua = UserAgent()
             launch_args = {
                 'headless': True,
                 'args': [
@@ -302,7 +303,7 @@ async def get_cyrjg(rrs: list):
                     "–-single-process"
                     # "--enable-extensions",
                     # "--window-size=1920,1080",
-                    f'\"--user-agent={ua.random}\"',
+                    f'\"--user-agent={common_useragent}\"',
                 ],
                 'dumpio': True,  # 解决浏览器多开卡死
             }
@@ -355,7 +356,7 @@ async def get_gmbd(rrs: list):
     for i in range(len(code_list)):
         try:
             start_time = time()
-            ua = UserAgent()
+            # ua = UserAgent()
             launch_args = {
                 'headless': True,
                 'args': [
@@ -372,7 +373,7 @@ async def get_gmbd(rrs: list):
                     "–-single-process"
                     # "--enable-extensions",
                     # "--window-size=1920,1080",
-                    f'\"--user-agent={ua.random}\"',
+                    f'\"--user-agent={common_useragent}\"',
                 ],
                 'dumpio': True,  # 解决浏览器多开卡死
             }
@@ -427,7 +428,7 @@ async def get_jjjl(rrs: list):
     for i in range(len(code_list)):
         try:
             start_time = time()
-            ua = UserAgent()
+            # ua = UserAgent()
             launch_args = {
                 'headless': True,
                 'args': [
@@ -444,7 +445,7 @@ async def get_jjjl(rrs: list):
                     "–-single-process"
                     # "--enable-extensions",
                     # "--window-size=1920,1080",
-                    f'\"--user-agent={ua.random}\"',
+                    f'\"--user-agent={common_useragent}\"',
                 ],
                 'dumpio': True,  # 解决浏览器多开卡死
             }
@@ -508,7 +509,7 @@ async def get_tsdata(rrs: list):
     for i in range(len(code_list)):
         try:
             start_time = time()
-            ua = UserAgent()
+            # ua = UserAgent()
             launch_args = {
                 'headless': True,
                 'args': [
@@ -525,7 +526,7 @@ async def get_tsdata(rrs: list):
                     "–-single-process"
                     # "--enable-extensions",
                     # "--window-size=1920,1080",
-                    f'\"--user-agent={ua.random}\"',
+                    f'\"--user-agent={common_useragent}\"',
                 ],
                 'dumpio': True,  # 解决浏览器多开卡死
             }
@@ -592,7 +593,10 @@ async def get_html_1(url, timeout=10):
 
 if __name__ == '__main__':
     s_time = time()
-    ranges = [0, 6945]
+    """
+    1.控制基金爬取的范围，可以多段爬取. 
+    """
+    ranges = [6800, 6800]
     # 10个：62s 20个：116s 100个：1335s 600个 9172s  15s/个
     tasks = [get_jdzf(rrs=ranges), get_jndzf(rrs=ranges), get_cyrjg(rrs=ranges), get_gmbd(rrs=ranges),
              get_jjjl(rrs=ranges), get_tsdata(rrs=ranges)]
@@ -607,15 +611,15 @@ if __name__ == '__main__':
     results = loop.run_until_complete(
         asyncio.gather(*tasks))  # loop.run_until_complete() 既可以接收一个协程对象, 也可以接收一个 future 对象
 
-    # asyncio.get_event_loop().run_until_complete(get_html(url_list[0]))
-    # loop.close()
-
     dd = la.iloc[ranges[0]:ranges[1]]
     dd.index = range(len(dd))
-    # 合并数据写入funds_full_info.csv
+    """
+    2.合并数据 写入funds_full_info.csv文件中
+    """
     fal = pd.concat([dd, results[0], results[1], results[2], results[3], results[4], results[5]], axis=1)
     fal.to_csv('funds_full_info.csv', mode='a+', index=False, header=False)
 
-    # csv 转成 xlsx 带上标题
-    # to do
-    print(f"全部请求完成,耗时:[{time() - s_time:.2f}s].开始于:{s_time:.2f} 结束于:{time():.2f}")
+    """
+    3.统计每次的耗时
+    """
+    print(f"全部请求完成,耗时:[{time() - s_time:.2f}s].单个平均耗时:[{(time() - s_time)/(ranges[1] - ranges[0])}:.2F]开始于:{s_time:.2f} 结束于:{time():.2f}")
