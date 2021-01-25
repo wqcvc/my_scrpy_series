@@ -488,7 +488,7 @@ class libFund(MyLogger):
         fal = pd.concat([dd, df_1, df_2, df_3], axis=1)
         fal.to_csv('funds_full_info.csv', mode='a+', index=False, header=False)
 
-        # 转存xlsx+标题.写入xlsx失败没关系。csv有完整数据，再次保存进xlsx即可
+        # 转存xlsx+标题.写入xlsx失败没关系。csv有完整数据，再次保存进xlsx即可  pypter_aysn.py也写入这里
         # 如果出现: Duplicate names are not allowed. 说明colnums中有很多重复的字段，例如: - 。截取的code没有数据导致
         colnums = ['基金代码', '基金名称', '类型'] + t1 + t2 + t3
         self.logger.info(colnums)
@@ -496,6 +496,36 @@ class libFund(MyLogger):
         self.logger.info(fal_f)
         excel_name = 'funds_full_info.xlsx'
         fal_f.to_excel(excel_name)
+
+    def fund_quohld_cal(self, qlist: list = None):
+        """
+        持仓所有基金前十重仓统计重叠系数 及 持有比例 金额数据
+        :param clist: 基金代码列表,不传默认使用json数据
+        :return: 历史day天的净值 日增长率等信息等列表
+        """
+        if not qlist:
+            qlist = self.fund_list
+
+        quo_dict = {'名称(代码)':['价格','比例']}
+        for i in range(len(qlist)):
+            res_tmp = self.fund_hold_shares(qlist[i])
+            res_tmp = res_tmp[1:]
+            for j in range(len(res_tmp)):
+                name = str(res_tmp[j][2]) + "(" + str(res_tmp[j][1]) + ")"
+                price = res_tmp[j][3]
+                hld_rate = res_tmp[j][5]
+                print(name,price,hld_rate)
+                if name not in quo_dict:  # quo_dict.keys()
+                    quo_dict[name] = [price,hld_rate]
+                    # 加 异常处理  有的持仓数据找不到 LOF的找不到数据在 http://fundf10.eastmoney.com/ccmx_163406.html
+                elif name in quo_dict:
+                    old_rate = quo_dict[name][1]
+                    print(old_rate)
+                    quo_dict[name] = [price,old_rate+hld_rate]
+                else:
+                    self.logger.info(f"unexpected error...")
+
+        self.logger.info(quo_dict)
 
     def update_funds_mysqldata(self):
         """
@@ -1131,26 +1161,36 @@ if __name__ == "__main__":
 
     # # 1.获取基金列表的实时涨跌幅
     # ff.fund_current_jjjz()
+
     # # 2.获取基金列表的持有收益率
     # ff.fund_rate_estimate()
+
     # # 3.获取基金列表的持有总金额 + 持有收益金额 + 实时估算收益
     # ff.fund_hold_info
+
     # # 4.单个基金股票前10数据 + 仓位占比重
-    # ff.fund_hold_shares('001695')
+    ff.fund_hold_shares('163406')
+
     # # 5.单个基金的历史单位净值 + 历史净值 + 日收益率
-    ff.fund_history_jjjz('161725', 20)
+    # ff.fund_history_jjjz('161725', 20)
+
     # # 6.全部基金列表: 基金名字 基金代码 类型
     # all_list = ff.funds_all_list(to_file=0)
     # print(all_list['name'][0])
+
     # # 7.历史各种涨幅数据 : 共31项 1-阶段涨幅(10项) 2-季度涨幅(8个季度) 3-年度涨幅(8年) 4-持有人结构(最近一期的5项数据)
     # sss1 = ff.fund_his_rates(['270002', '161219'])
+
     # # 8.基础信息 : 规模变动信息（8个季度） + 基金经理任期管理信息（5项数据）
     # sss2 = ff.fund_basic_info(['270002', '161219'])
+
     # # 9.基金特色数据: 标准差 + 夏普率。
     # sss3 = ff.fund_special_info(['000002'])
-    # # 10.基金汇总保存进同一个csv + xlsx. 可以不连续请求。eg: 0:2 2:5 5:10分段
-    # # 存在性能问题目前,使用 pypter_aysn.py协程并发极大提高效率。i5 cpu大概 27小时能更新完数据。之前需要100多个小时
-    # ff.funds_full_info([0, 6945])  # 20个400多s 10个200多s 20个720s
+
+    # 10.基金汇总保存进同一个csv + xlsx. 可以不连续请求。eg: 0:2 2:5 5:10分段
+    # 存在性能问题目前,使用 pypter_aysn.py协程并发极大提高效率。i5 cpu大概 27小时能更新完数据。之前需要100多个小时
+    # ff.funds_full_info([0, 2])  # 20个400多s 10个200多s 20个720s
+
     # # 11.保存数据库
     # sourcefile1 = 'funds_use_list.xlsx'
     # dstable1 = 'funds_use_list'
@@ -1158,13 +1198,17 @@ if __name__ == "__main__":
     # sourcefile2 = 'funds_full_info.xlsx'
     # dstable2 = 'funds_full_info'
     # ff.db_save(dffile=sourcefile2, totable=dstable2)
+
     # # 12.从数据库读取数据
     # table = 'funds_full_info'
     # df_f_db = ff.db_read(selectable=table, schema='fund')
-    #
+
     # # 13.基金公司排名+管理规模等信息
     # cominfo = ff.fund_company_info()
     # sourcefile3 = 'funds_company_info.xlsx'
     # dstable3 = 'funds_company_info'
     # cominfo.to_excel(sourcefile3)
     # ff.db_save(dffile=sourcefile3, totable=dstable3, host='127.0.0.1', schema='fund')
+
+    # 14.统计持仓所有的基金中前十重仓股的相关系数 比例 及 持有金额
+    ff.fund_quohld_cal()

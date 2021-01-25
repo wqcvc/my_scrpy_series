@@ -19,6 +19,7 @@ import asyncio
 
 class libScrpy(MyLogger):
     _current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    common_useragent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36"
 
     def __init__(self, level=logging.INFO):
         super().__init__(__name__, level=level)
@@ -38,10 +39,12 @@ class libScrpy(MyLogger):
         :param url:
         :return:
         """
-        ua = UserAgent()
+        self.logger.info(f"in lib_scrapy: request_method!")
+        # ua = UserAgent()
         headers = {
             'refer': 'http://fund.eastmoney.com/',
-            'User-Agent': ua.random
+            # 'User-Agent': self.common_useragent
+            'User-Agent': self.common_useragent
         }
         start_time = time()
         resp = requests.request(method="GET", url=url, headers=headers)
@@ -63,7 +66,7 @@ class libScrpy(MyLogger):
         :return:
         """
         start_time = time()
-        ua = UserAgent()
+        # ua = UserAgent()
         launch_args = {
             'headless': True,
             # 'devtools': False,  # 控制界面的显示，用来调试
@@ -79,7 +82,7 @@ class libScrpy(MyLogger):
                 # "--enable-extensions",
                 # "--window-size=1920,1080",
                 '--refer=http://fund.eastmoney.com',
-                f'\"--user-agent={ua.random}\"',
+                f'\"--user-agent={self.common_useragent}\"',
             ],
             'dumpio': True,  # 解决浏览器多开卡死
         }
@@ -98,7 +101,7 @@ class libScrpy(MyLogger):
         self.logger.info(f"Request Costs:{end_time - start_time:.2f}s")
         return text
 
-    def selenium_method(self,url: str):
+    def selenium_method(self, url: str):
         """
         selenium无头浏览器模式获取数据,原理和pyppeteer_method差不多,以后再实现
         :param url:
@@ -121,10 +124,10 @@ class libScrpy(MyLogger):
         """
         pass
 
+
 if __name__ == "__main__":
     scrpp = libScrpy()
-    resp=scrpp.request_method(url='http://fundf10.eastmoney.com/tsdata_000002.html')
+    resp = scrpp.request_method(url='http://fundf10.eastmoney.com/tsdata_000002.html')
     # resp = asyncio.get_event_loop().run_until_complete(scrpp.pyppeteer_method(url='http://fundf10.eastmoney.com/tsdata_000002.html'))
     print(resp)
     # resp=scrpp.fund_request_by_code('512000')
-
