@@ -589,7 +589,7 @@ class libFund(MyLogger):
         sss2 = sorted(quo_dict.items(), key=lambda quo_dict: float(quo_dict[1].replace("%", "")), reverse=True)
         print(type(sss2))
         for k in sss2:
-            print(k)
+            print(k[0],k[1])
         return quo_dict
 
     def update_funds_mysqldata(self):
