@@ -596,7 +596,7 @@ if __name__ == '__main__':
     """
     1.控制基金爬取的范围，可以多段爬取. 
     """
-    ranges = [6800, 6800]
+    ranges = [6800, 7320]
     # 10个：62s 20个：116s 100个：1335s 600个 9172s  15s/个
     tasks = [get_jdzf(rrs=ranges), get_jndzf(rrs=ranges), get_cyrjg(rrs=ranges), get_gmbd(rrs=ranges),
              get_jjjl(rrs=ranges), get_tsdata(rrs=ranges)]
