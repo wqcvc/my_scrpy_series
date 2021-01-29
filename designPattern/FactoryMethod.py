@@ -36,7 +36,7 @@ class AbstractFactory(metaclass=abc.ABCMeta):
     """
     抽象工厂
     """
-
+    #  __metaclass__ = abc.ABCMeta equal to: metaclass = abc.ABCMeta
     @abc.abstractmethod
     def product_car(self):
         pass
