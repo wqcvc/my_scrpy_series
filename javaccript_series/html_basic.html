@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en"> <!--整个网页-->
+<head> <!--头部-->
+    <meta charset="UTF-8">
+    <title>我是网页标题</title> <!--标题-->
+    <!--页面级样式-->
+    <style type="text/css">
+        h1 {color:red; font-size:32px; font-weight:bold;}
+        p {color:green;}
+        ul,ol {color:blue;}
+        dl dt {color:red}
+    </style> <!-- selector {property: value} -->  <!--上下文选择器dl dt-->
+    <style>
+        .imprnt {color:brown; font-size:28px;}
+        div.imp {color:yellow; font-weight:bold;}
+        #ttt {font-weight:bold;}
+        h3,#dl4,.heading,div.iii {font-weight:normal}
+        ol li.xxx {color:red; font-size:bold}
+        .yellow {color:yellow;}
+        .blue {color:blue;}
+        .yello.blue {color:green;}
+        a:hover {color:yellow}
+        a {border-color:red; border-width:1px;border-style:solid;}
+        td,th {border: 1px solid black;}
+    </style>
+    <!--网站级样式-->
+    <link rel="stylesheet" href="./common.css" type="text/css"> <!--type="text/css" 可有可无-->
+    <!--所有标签:class id 属性。class:元素分类 id:独一无二标志符-->
+    <!---伪类:a:hover -->
+    <!--子选择器: p > span.xxx {xxx:xxx} -->
+    <!--盒子模型:a {border-color:red;border-style:solid;}-->
+    <!--属性选择器: p[class="higih"] {xxx=xxx} or p[class ~= "xxx"]  效果: p.higih 任务属性可选-->
+    <!---->
+    <script>
+
+    </script>
+
+
+</head>
+<body> <!--网页内容-->
+<!--part1-->
+<h1 id="dl1" class="first" style="font-family:Verdana,san-serif"> 第1段落 </h1> <!--6级标题-->
+<h2  class="first" style="font-family:Verdana,san-serif"><a name="dl2"> 第2段落 </a></h2>
+<h3 id="dl3" class="first" style="font-family:Verdana,san-serif"> 第3段落 </h3>
+<h4 id="dl4" class="first" style="font-family:Verdana,san-serif"> 第4段落 </h4>
+<h5 id="dl5" class="first" style="font-family:Verdana,san-serif"> 第5段落 </h5>
+<h6 id="dl6" class="first" style="font-family:Verdana,san-serif"> 第6段落 </h6>
+<h7  class="first" style="font-family:Verdana,san-serif"> 第7段落 </h7>
+<p> para</p> <!--段落-->
+
+<!--part2-->
+<ul style="list-style-type: circle;"> <!--无序列表 disc square circle -->
+    <li style="list-style-image: url(/bulluet.gif);">1</li>
+    <li style="list-style-postion: inside;">2</li>
+    <li style="list-style:circle inside  url(/bulluet.gif);">3</li>
+</ul>
+<ol style="list-style-type: upper-alpha;" start="1" > <!--有序列表 CSS decimal lower-alpha upper-alpha lower-roman upper-roman -->
+    <li class="xxx">1</li>
+    <li value="10">2</li>
+    <li style="list-style-type: lower-alpha;">3</li>
+</ol>
+<dl> <!--定义列表 -->
+    <dt>dt-1</dt> <!--术语标签-->
+    <dd>dt-1's dd-1</dd> <!--定义标签-->
+</dl>
+
+<!--part3-->
+Go back to <a href="test.html" title="干嘛用的">百度两下 你就懵了(一个本地页面)</a> <!--超文件链接 and 锚 and 属性-->
+外部链接:   <p><em><a href="https://www.baidu.com/" title="">点我完事儿</a></em></p>
+<ul>
+    <li><em><a href="https://www.baidu.com/" target="_blank">link A</em> is baidu</a> desc: A is jump to baidu.com</li>
+    <li><em><a href="https://www.google.com/" target="_blank">link B</em> is google</a> desc:B is jump to google.com</li>
+    <li><em><a href="https://www.csdn.com/" target="_blank">link C</em> is CSDN</a> desc:C is jump to csdn.com</li>
+</ul>
+<br><a href="#dl1"> Go to dl1</a></body> <!--id 锚-->
+<br><a href="quote.html#zjl_box"> Go to quote.html->id:zjl_box</a>
+<a href="#dl2" rel="nofollow"> test_dl2</a> <!--name 锚  rel属性-->
+
+<!--part4-->
+<p><code>#include "trans.h"</code></code></p>   <!--语义标签:em:强调,斜体显示 code:代码块 strong samp kbd dfn cite:引用,斜体显示  abbr:缩写-->
+<!--CSS span-->
+<p><span style="text-decoration: overline">test_CSS_span:text-decoration</span></p>  <!--span：通用标签,应用样式-->
+<p><span style="text-decoration: underline">test_CSS_span:text-decoration</span></p>
+<p><span style="text-decoration: line-through">test_CSS_span:text-decoration</span></p>
+<p><span style="text-decoration: blink">test_CSS_span:text-decoration</span></p>
+<p><span style="font-style: italic">test_CSS_span:font-style</span></p>
+<p><span style="font-style: oblique">test_CSS_span:font-style</span></p>
+<p><span style="font-weight: lighter;">test_CSS_span:font-weight</span></p>
+<p><span style="font-weight: 800;">test_CSS_span:font-weight</span></p>
+<p><span style="font-family: serif;">test_CSS_span:font-family</span></p>
+<p><span style="font-variant: small-caps;">Test_CSS_Span:Font-Variant</span></p>
+<pre> <!--保留文本格式-->
+----------
+   ----
+      34432 2423  sfs
+        *#¥#
+</pre>
+<hr> <!--水平分割线-->
+<hr align="right" width="%10" size="8">
+<hr>
+<br>change line
+
+<address>
+    connect author:terry.wang.please send email to: <a href="terry.wang@yingzt.com">terry.wang@yingzt.com </a><br>
+    date:2020-07-28<br>
+</address>
+<blockquote cite="https://www.baidu.com/"> <!--引文-->
+    引文是什么东西?
+</blockquote>
+
+<!--part5--> <!--css:长度:相对+绝对 url 百分比 颜色 -->
+<div class="imprnt">Some text1.</div> <!--换行: div固有的唯一格式表现-->
+<div class="imp">Some text2.</div> <!--换行: div固有的唯一格式表现-->
+<div id="ttt">Some text3.</div> <!--换行: div固有的唯一格式表现-->
+<p class="yello blue">My green paragraph.</p> <!--多个class-->
+
+<!--part6-->
+<!--image: GIF JPEG PNG SVG.-->
+<!--image属性: src alt-->
+<br><image src="./J-202.jpg" alt="this is J-20 fighter.please wait..."></image>
+<br><image src="./J-200.jpg" alt="this is J-20 fighter.please wait..."></image>
+<br><image src="./pkq-2.jpg" style="vertical-align:top"></image>
+<br><image src="./pkq.jpg" height="100" width="100"></image> <!--少用,尽量用css-->
+<br><a href="index.html"><img src="./zhongzi.jpg" alt="up" style="border:none; height:80px; width:80px;";>link_and_img</a> <!--img作为链接-->
+<br><image src="huolong.jpeg"style="height:50px; width:50px";></image>
+<div style="background-image: url('zhongzi.jpg'); height=500px; width=500px; background-repeat: no-repeat; background-position:-168px -148px;margin-left:5px;margin-top:7px;">
+    <p >I am just a paragraph with backgroud-image.</p>      <!---图像背景填充-->
+</div>
+<map></map><area> <!--高级用法-->
+
+<!--part7-->
+<!--table:表格, 设置网页布局的最好方式-->
+<!--th:表头单元格table head-->
+<!--td:数据单元格table data-->
+<!--tr:每行-->
+<!--单元格-->
+<div>
+    <table cellpadding="7" cellspacing="8" style="width:100%; height:35%; border:2px solid brown; float:left;" >
+        <caption>visit it~</caption>
+            <tr>
+                <th>基名</th>
+                <th>涨幅</th>
+                <th>夏普比率</th>
+                <th></th>
+            </tr>
+            <tr>
+                <td>国投瑞银</td>
+                <td>1.21%</td>
+                <td>1.2</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>交银新生</td>
+                <td>0.89%</td>
+                <td>1.3</td>
+            </tr>
+    </table>
+</div>
+
+<div>
+    <table style="width:100%; height:35%; border:2px solid brown; float:left;">
+        <caption>visit it2~</caption>
+        <thead>
+            <tr>
+                <th>111</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>222</td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td>3333</td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+<!--part8-->
+<!--CSS:locate element-->
+<!--postion: static relative absolute fixed-->
+<nav id="navigationBar">...menu lists...</nav>
+
+<!--part9-->
+<!--form表单: 交互,用户输入及发送去哪里-->
+<!--action:要提交到的 URL。最好是程序 or cgi-->
+<!--method:post:send to server  get:main for search-->
+<!--label:描述便签文本 for==id:唯一标识 or name:标签名称 class:标签类名-->
+<!--input:表单控件. type name==id-->
+<!--datalist:-->
+<!--:-->
+
+<form action="/form-processing-script" method="post">
+    <h2>Please Log In</h2>
+    <div>
+        <label for="username">Username</label>
+        <input type="text" name="username">
+    </div>
+    <div>
+        <label for="password">Password</label>
+        <input type="password" name="password">
+    </div>
+    <div>
+        <input type="submit" class="submit" value="Login">
+    </div>
+</form>
+
+<!--input:text-->
+<form>
+    <label for="text_1">Please enter somewords:</label>
+    <input type="text" id="text_1" size="35" maxlength="25" minlength="3" value="Enter text_1" pattern="[0-9][A-Z]{3}">
+</form>
+
+<!--datalist-->
+<datalist id="game">
+    <option value="rock">
+    <option value="papaer">
+    <option value="unicorn">
+    <option value="aldegehammer">
+</datalist>
+
+<label>
+    Your move:
+    <input id="move" list="game">
+</label>
+
+<!--input:emil and url-->
+<form>
+    <div>
+        <label>email addr:</label>
+        <input type="email" id="addredss">
+    </div>
+    <div>
+        <label>website:</label>
+        <input type="url" id="url">
+    </div>
+</form>
+
+<!--input:date datetime datetime-local month week time color search password submit reset-->
+<!--input:checkbox 复选框 radio 单选按钮 image 图像用作自定义按钮-->
+<form>
+    <div>
+        <label>date:</label>
+        <input type="date" id="date">
+    </div>
+    <div>
+        <label>search:</label>
+        <input type="search" id="search">
+    </div>
+    <div>
+        <label>submit:</label>
+        <input type="submit" id="search">
+    </div>
+    <div>
+        <label>checkbox:</label>
+        <input type="checkbox" id="checkbox">
+    </div>
+</form>
+
+<!--input:button hidden-->
+<form>
+    <div>
+        <input type="button" id="button_1" value="button_1" onclick="print_hello()">
+    </div>
+</form>
+
+<!--input:file + submit-->
+<form action="/upload" enctype="multipart/form-data" method="post">
+    <div>
+        <label>fileupload:</label>
+        <input type="file" name="file_upload" >
+        <input type="submit" >
+    </div>
+</form>
+
+<!--other:button : submit custom reset.  textarea:大型文本输入字段-->
+<button type="submit" >Submit button</button>
+<button type="custom" ><image src="huolong.jpeg"></button>
+<textarea name="question1" rows="10" cols="60">Enter text here~~~</textarea>
+
+<!--菜单:select option-->
+<div>
+    <label for="select_1">Please pick one select_option~</label>
+    <select id="select_1" multiple >
+        <option >China</option>
+        <option selected>ABC</option>
+        <option>DEF</option>
+        <option>HJK</option>
+    </select>
+</div>
+<div class="compareTarget">
+    <select id="compareTargetSel" name="compareTargetSel">
+        <option value="000300">沪深300</option>
+        <option value="000905">中证500</option>
+        <option value="000001">上证指数</option>
+        <option value="399001">深证成指</option>
+        <option value="399005">中小板指</option>
+        <option value="399006">创业板指</option>
+    </select>
+</div>
+
+<!--控件编组: fieldset  legend -->
+<!--快捷键: accesskey -->
+<fieldset>
+    <legend>a multiple sets</legend>
+    <label><input type="radio" name="Apple1" accesskey="A">Apple1</label>
+    <label><input type="radio" name="Apple2">Apple2</label>
+    <label><input type="radio" name="Apple3">Apple3</label>
+</fieldset>
+
+<!--进度:progress meter-->
+<progress id="progress1" value="50" max="100">%50</progress>
+
+<!--part9-->
+<!--video: source-   object-flash电影  -->
+<!--audio-->
+<video src="video.mp4"></video>
+<audio src="audio.mp3"></audio>
+
+<!--part10-->
+<!--JavaScript 事件驱动-->
+
+</body>
+</html>

@@ -355,4 +355,3 @@ def scope_test():
 mm = scope_test()
 print(mm.__doc__)
 print("In global scope:", spam)
-

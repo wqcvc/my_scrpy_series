@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <!--windows:浏览器环境。顶级对象-->
+    <!--document:子对象，当前网页完整细节。所有操作页面的js都通过document对象的方法-->
+    <!--location:web文档位置信息-->
+    <!--history:历史记录-->
+    <script>
+        document.write("Printed by Javascript～"+"<br>");
+        document.write(5000+"<br>");
+        document.write(5000+2.2112+"<br>");
+        document.write(document+"<br>");
+    </script>
+    <script>
+        function myFunction(){
+            document.getElementById("demo3").innerHTML = "段落被改变"
+        }
+    </script>
+</head>
+<body>
+<a data-click="{
+			'F':'778717E8',
+			'F1':'9D73F1E4',
+			'F2':'4CA6DD6B',
+			'F3':'54E5243D',
+			'T':'1597720827',
+			'y':'FF41F7FE'
+			}"
+   href="http://www.baidu.com/link?url=XIQi6oM_cPvDiO4FZs_3aeig2xF9Ua3aFHU5f5bRk2_G49V2ZGNd8v0tVa0I7T3UgK6iFXDTuFdvfbSHDSPrXZ_051kI0CdIsg3g17NvLAK" target="_blank">强大的谷歌<em>插件css</em>生成<em>器Selector</em>Gadget_王泽岭的博客..._CSDN博客</a>
+<!-- 1 -->
+<p id="demo"> js这里将被点击后改变内容</p>
+<button type="button" onclick="document.getElementById('demo').innerHTML = 'Hello JavaScript';"> 单击这里执行getElementById改变html内容</button>
+<button type="button" onclick="document.getElementById('demo').style.fontSize = '35px'"> 单击这里执行改变元素样式</button>
+<button onclick="document.getElementById('demo').src='/i/eg_bulbon.gif'">单击这里执行改变html属性</button>
+<button type="button" onclick="document.getElementById('demo').style.display='none'">点击我隐藏html元素</button>
+<button type="button" onclick="document.getElementById('demo').style.display='block'">点击我显示html元素</button>
+<!-- 2 -->
+<p id="demo2"></p>
+<script>
+document.getElementById("demo2").innerHTML = 'Hello JavaScript';
+</script>
+<!-- 3 -->
+<p id="demo3">函数myfunction</p>
+<button onclick="myFunction()">函数myfunction</button>
+<!-- 4 -->
+<script src="myScript1.js"></script>
+<script src="/js/myScript2.js"></script>
+<script src="https://www.w3school.com.cn/js/myScript1.js"></script>
+<!-- 5 -->
+<script>
+window.alert(5 + 6);
+console.log(5 + 6);
+</script>
+<!-- 6 -->
+<p id="demo4"></p>
+<script>
+var x, y, z , $xyz, _xxx;  // 语句 1
+x = 22;        // 语句 2
+y = 11;        // 语句 3
+z = x + y;    // 语句 4
+$xyz = 22;
+_xxx = 23;
+var length = 7;                             // 数字
+var lastName = "Gates";                      // 字符串
+var cars = ["Porsche", "Volvo", "BMW"];         // 数组
+var x = {firstName:"Bill", lastName:"Gates"};    // 对象
+document.getElementById("demo4").innerHTML =
+"z 的值是" + z + "。";
+</script>
+<!-- 7 -->
+<script>
+    var person1 = {firstName:"Bill", lastName:"Gates", age:62, eyeColor:"blue"};
+    var person2 = {
+    firstName: "Bill",
+    lastName : "Gates",
+    id       : 678,
+    fullName : function() {
+        return this.firstName + " " + this.lastName + person2["firstName"];
+  }
+};
+</script>
+
+</body>
+</html>

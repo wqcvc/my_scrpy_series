@@ -291,6 +291,7 @@ class libFund(MyLogger):
         assert code, "基金代码必传"
         url = 'http://finance.sina.com.cn/fund/quotes/xxxxxx/bc.shtml'
         url = url.replace("xxxxxx", code)
+        self.logger.info(f" {url}")
         resp = self.scrpy.request_method(url)
         # resp = asyncio.get_event_loop().run_until_complete(self.scrpy.pyppeteer_method(url=url))
         quote_info_list = self.__match_quote_list(resp)
@@ -564,6 +565,7 @@ class libFund(MyLogger):
         # quo_dict = {'名称': '比例'}
         quo_dict = {}
         for i in range(len(qlist)):
+            self.logger.info(f" request and analyse : [{qlist[i]}]")
             res_tmp = self.fund_hold_shares2(qlist[i])
             res_tmp = res_tmp[1:]
             for j in range(len(res_tmp)):
@@ -1276,5 +1278,5 @@ if __name__ == "__main__":
     # ff.db_save(dffile=sourcefile3, totable=dstable3, host='127.0.0.1', schema='fund')
 
     # 14.统计持仓所有的基金中前十重仓股的相关系数 比例 及 持有金额
-    # fund_code_list2 = ['512000', '512000','512000']
-    ff.fund_quohld_cal()
+    fund_code_list2 = ['001054', '008286', '008174', '001102', '007412', '161903', '162605', '001679', '005968', '570008'] # 001875'
+    ff.fund_quohld_cal(fund_code_list2)
