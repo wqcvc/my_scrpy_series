@@ -1,0 +1,46 @@
+"""
+func: 基本sqlachemy的数据库操作
+author: qi.wang02@msxf.com
+date: 2021-09-17
+"""
+from sqlalchemy import create_engine
+import pandas as pd
+
+# 读数据库配置
+sql_host = "10.97.91.22"
+sql_user = "root"
+sql_pwd = "123456"
+sql_database = "variable_engine_test3"
+
+
+class DBEngine(object):
+    def __init__(self, host, user, pwd, db, port=3306):
+        self._host = host
+        self._user = user
+        self._pwd = pwd
+        self._db = db
+        self._port = port
+        self._engine = self.__create_engine()
+
+    def __create_engine(self):
+        eg = create_engine(f'''mysql+pymysql://{self._user}:{self._pwd}@{sql_host}:{self._port}/{self._db}''')
+        return eg
+
+
+class DBMetadata(DBEngine):
+    def __init__(self, host, user, pwd, db, port=3306):
+        super().__init__(host, user, pwd, db, port)
+        print("3.db connect finish~")
+
+    def read_sql(self, sql):
+        """
+        执行sql并返回dataframe数据
+        :param sql:
+        :return:
+        """
+        df = pd.read_sql_query(sql, self._engine)
+        print("read_sql finish.")
+        return df
+
+
+DBConnect = DBMetadata(sql_host, sql_user, sql_pwd, sql_database)
