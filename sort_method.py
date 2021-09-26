@@ -73,6 +73,7 @@ def quick_sort(li):
 
 
 #  4.选择排序 O(n²)-O(n²)
+#  选择最小or最大的往前放置依次排序
 def select_sort(li):
     assert li, "li为空，请检查"
     for i in range(len(li)):

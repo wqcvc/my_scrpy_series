@@ -8,6 +8,7 @@ show create table fund.student1;
 drop table fund.student1;
 alter table fund.student1 modify name VARCHAR(215) COMMENT '姓名';
 
+#增删查改 操作
 select * from fund.student1;
 INSERT INTO fund.student1(name, age) VALUES ('wq', 28);
 DELETE FROM fund.student1 WHERE name='wq';
@@ -23,6 +24,7 @@ select * from fund.funds_full_info limit 10000;
 #drop table fund.funds_full_inf0;
 
 select * from fund.funds_company_info;
+
 
 
 
