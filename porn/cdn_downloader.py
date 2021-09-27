@@ -32,6 +32,7 @@ class CDNDownloader(threading.Thread):
 
     def run(self):
         fragment = 0
+        print('当前线程的名字是： ', threading.current_thread().name)
         while True:
             url = self.base_url + self.cdn_code + "//" + self.cdn_code + str(fragment) + ".ts"
             try:
