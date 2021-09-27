@@ -10,6 +10,7 @@ Date    : 2021/9/25 21:57
 import requests
 import threading
 import os
+from lib_logger import mylogger
 
 
 class CDNDownloader(threading.Thread):
@@ -32,17 +33,17 @@ class CDNDownloader(threading.Thread):
 
     def run(self):
         fragment = 0
-        print('当前线程的名字是： ', threading.current_thread().name)
+        mylogger.info('当前线程的名字是： ', threading.current_thread().name)
         while True:
             url = self.base_url + self.cdn_code + "//" + self.cdn_code + str(fragment) + ".ts"
             try:
                 r = requests.get(url, timeout=60)
             except requests.exceptions.RequestException as e:
-                print(f"exception is: [{e}]")
-            print(f"[{self.save_path}]req_url:[{url}],req_stat: [{r.ok}]")
+                mylogger.info(f"exception is: [{e}]")
+            mylogger.info(f"[{self.save_path}]req_url:[{url}],req_stat: [{r.ok}]")
             if r.ok is True:
                 ts_src = self.save_path + self.cdn_code
-                self.mkdir(ts_src)
+                dir_res = self.mkdir(ts_src)
                 with open(ts_src + "//" + str(fragment).rjust(10, '0') + ".ts", 'wb') as f:
                     f.write(r.content)
                 fragment = fragment + 1
