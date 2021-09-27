@@ -21,11 +21,11 @@ import threading
 import execjs
 import asyncio
 from pyppeteer import launch
-from lib_logger import MyLogger
 import csv
 from lxml import etree
 from cdn_downloader import CDNDownloader
 import os
+from lib_logger import MyLogger
 
 config = ConfigParser()
 config.read("urls_rules.ini")
@@ -153,6 +153,7 @@ class My91DownLoad(MyLogger):
             self.logger.info(f"save_path: {save_path}")
             # 已经存在对应的目录就不在进行ts爬取下载
             if os.path.exists(save_path):
+                self.logger.info(f"save_path:[{save_path}] exists,jump it.")
                 continue
             # 下载ts片段
             t = CDNDownloader(v, save_path)
@@ -161,13 +162,14 @@ class My91DownLoad(MyLogger):
             t.join()
             # 下载封面图
             res_img = requests.get(img_url.replace('xxx', v))
+            self.logger.info(f"img_url is:[{img_url}]")
             if res_img.ok is True:
                 with open(save_path + k + '.jpg', 'w') as ff:
                     ff.write(res_img.content)
 
             # 下载完成后合并所有ts文件为mp4
             # 删除*.ts
-            self.merge_ts_video(source_path=save_path, target_path=save_path, file_name=k)
+            self.merge_ts_video(source_path=save_path, target_path=save_path, file_name=k + '.mp4')
 
         self.logger.info(f"下载一共用时:[{time.time() - start_time}.2f]秒")
         self.logger.info("wonderful..perfect...当前所有下载完成,请检查...")
@@ -189,10 +191,17 @@ class My91DownLoad(MyLogger):
                 f.write(open(ts_video_path, 'rb').read())
 
         if os.path.exists(merge_file_name):
-            shell_str1 = 'del ' + source_path + '\\' + '*.ts'
-            os_res = os.system(shell_str1)
-            if os_res == 0:
-                self.logger.info(f"[{merge_file_name}]merge完成,删除*.ts文件完成")
+            # shell_str1 = 'del ' + source_path + '/' + '*.ts'
+            # print(shell_str1)
+            # os_res = os.system(shell_str1)
+            n = 0
+            for root, dirs, files in os.walk(source_path):
+                for name in files:
+                    if name.endswith(".ts"):
+                        n += 1
+                        os.remove(os.path.join(root, name))
+            self.logger.info(f"共删除了{n}个.ts文件")
+            self.logger.info(f"[{merge_file_name}] merge完成,删除*.ts文件完成")
             return True
         else:
             return False
@@ -585,6 +594,6 @@ class My91DownLoad(MyLogger):
 if __name__ == '__main__':
     f = My91DownLoad()
     # 最大number=25,单页24个 [作为游客，你每天只可观看25个视频]
-    f.start_by_number(number=1, method=0)
+    # f.start_by_number(number=2, method=0)
     # # 按照页码下载
-    # f.start_by_page(2)
+    f.start_by_page(1)

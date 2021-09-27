@@ -10,6 +10,7 @@ import logging
 import os
 import io
 import traceback
+import sys
 
 
 class MyLogger(logging.Logger):
@@ -80,4 +81,19 @@ class MyLogger(logging.Logger):
             break
         return rv
 
-mylogger = MyLogger(__name__, logging.INFO)
+    def test(self):
+        """
+        获取函数名及被调用函数名的3种方式 + 行数or 路径(to do)
+        :return:
+        """
+        print(sys._getframe().f_code.co_name)
+        print(sys._getframe(0).f_code.co_name)
+        print(sys._getframe(1).f_code.co_name)
+        print(sys._getframe(1).f_code.co_filename)
+        # print(sys._getframe(1).f_back.f_lineno)
+
+
+if __name__ == '__main__':
+    mylogger = MyLogger(__name__, logging.INFO)
+    mylogger.info(f"test mylogger func")
+    mylogger.test()
