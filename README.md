@@ -5,9 +5,7 @@ python爬虫系列：
   功能列表：
     1.按请求个数爬取并自动下载: start_by_number(number=2)
     2.按请求页数爬取并自动下载: start_by_page(page=1)
-call_func_sort: 
-    1. start_by_number -> fetch_subpage_urls -> fetch_video_urls_new(__pyppeteeer_newget) -> download_videos
-    2. start_by_page -> fetch_specific_page -> fetch_video_urls_new(__pyppeteeer_newget) -> download_videos
+
 
 二.fund
   介绍：针对天天基金的各种基金信息的爬虫
