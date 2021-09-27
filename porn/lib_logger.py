@@ -80,7 +80,4 @@ class MyLogger(logging.Logger):
             break
         return rv
 
-
-if __name__ == '__main__':
-    mylogger = MyLogger(__name__, logging.INFO)
-    mylogger.info(f"test mylogger func")
+mylogger = MyLogger(__name__, logging.INFO)
