@@ -34,8 +34,11 @@ class CDNDownloader(threading.Thread):
         fragment = 0
         while True:
             url = self.base_url + self.cdn_code + "//" + self.cdn_code + str(fragment) + ".ts"
-            print(url)
-            r = requests.get(url)
+            try:
+                r = requests.get(url, timeout=60)
+            except requests.exceptions.RequestException as e:
+                print(f"exception is: [{e}]")
+            print(f"request url:[{url}],request_status: [{r.ok}]")
             if r.ok is True:
                 ts_src = self.save_path + self.cdn_code
                 self.mkdir(ts_src)
