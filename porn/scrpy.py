@@ -2,9 +2,10 @@
 Date:   2020-8-24
 Author: terry.wang
 topic:  for test fetch 91porn videos and download
-usage:  1.提前在ini中配置好91porn最新网址和浏览器访问cookie
+usage:  1.提前在ini中配置好91porn最新网址和scrpy.py中配置浏览器访问cookie
         2.调用链: start_by_number -> __fetch_videoUrlInfo ->__cdn_download
         -> CDNDownloader() -> merge_ts_video
+        3.start_by_page 按照页码下载
 """
 
 from time import time
@@ -25,22 +26,14 @@ import csv
 from lxml import etree
 from cdn_downloader import CDNDownloader
 import os
-from collections import defaultdict
 
 config = ConfigParser()
 config.read("urls_rules.ini")
-
-# logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-# logger = logging.getLogger(__name__)
-# logger.info(f"[{config['video_urls']['index_page']}]")
-# logger.info(f"[{config['rules']['sub_page_rule']}]")
-# logger.info(f"[{config['rules']['video_rule']}]")
 
 gl_cookie = "CLIPSHARE=47348bded4f2af853474ce2a7df2d7c2; __utmc=20744104; __utmz=20744104.1630418255.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utma=20744104.746455921.1630418255.1632658768.1632661630.14; __utmb=20744104.0.10.1632661630; covid=0f5dt+u+C8aGzQtx1sicxRb+/OMtttxzw0HI+ZqE"
 
 
 class My91DownLoad(MyLogger):
-    _favo_video_url = "https://0722.91p51.com/video.php?category=rf&page=1"
     _current_day = datetime.datetime.now().strftime("%Y-%m-%d")
     _current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -58,16 +51,18 @@ class My91DownLoad(MyLogger):
 
     def start_by_number(self, number: int = 0, method: int = 0):
         """
-        统一开始请求+下载入口
+        按照个数下载video
         :param number: int 下载个数，超过每页24 自动翻页
-        :param method: 方式：0-cdn ts流下载 1-request+strencode加密解密方式
+        :param method: 方式：0-cdn_ts流下载 1-request+strencode加密解密方式(废弃)
         :return:
         """
-        list_urls, title_cdncode_dict = self.__fetch_videoUrlInfo(number)
+        list_urls, title_cdn_dict = self.__fetch_videoUrlInfo(number)
         if method == 0:
-            self.__cdn_download(title_cdncode_dict)
+            self.__cdn_download(title_cdn_dict)
         elif method == 1:
             list_videos, list_titles = self.fetch_video_urls(list_urls)
+            self.logger.info(f"titles/videos列表打印: [{list_titles}]\n [{list_videos}]")
+            self.download_videos(title_lists=list_titles, video_lists=list_videos)
         else:
             self.logger.info(f"Unknown method.check args:method value")
         # 可以考虑使用多线程下载
@@ -77,13 +72,20 @@ class My91DownLoad(MyLogger):
         #     t.start()
         # for in range(threads):
         #     t.join()
-        self.logger.info(f"list_titles and list_videos : [{list_titles}]\n [{list_videos}]")
-        self.download_videos(title_lists=list_titles, video_lists=list_videos)
+
+    def start_by_page(self, page: int = 0):
+        """
+        按照特定的页数下载那一页的24个video
+        :param page: 指定的页码
+        :return:
+        """
+        list_urls, title_cdn_dict = self.__fetch_videoUrlInfo2(page)
+        self.__cdn_download(title_cdn_dict)
 
     def __fetch_videoUrlInfo(self, number: int = 0):
         """
         主入口:index页面获取每个视频相关的url,cdn编号等信息
-        number: 获取个数
+        number: 需要下载的个数,超过24个就会请求多个页码
         :return:
         """
         pages = number // 24 + 1
@@ -92,8 +94,8 @@ class My91DownLoad(MyLogger):
         title_cdn_dict = {}
         title_cdn_dict_final = {}
         for page in range(pages):
-            current_url = config['index']['index_page'].replace("page=xxx", f"page={page + 1}")
-            self.logger.info(f"__fetch_videoUrlInfo 请求url : {current_url}\n")
+            current_url = config['index']['index_page'].replace("page=1", f"page={page + 1}")
+            self.logger.info(f"__fetch_videoUrlInfo 请求url : {current_url}")
             headers = {
                 'User-Agent': config['UA']['user_agent'],
                 'Referer': current_url,
@@ -102,14 +104,9 @@ class My91DownLoad(MyLogger):
                 'cookie': gl_cookie
             }
             res1 = requests.request('GET', current_url, headers=headers)
-            # self.logger.info(f"res1.status_code : {res1.status_code}")
-            # self.logger.info(f"res1.text include: {res1.text}")
-            print(res1.text)
 
             subpage_re_rules = [
-                'https://a1016.91p01.com/view_video.php\\?viewkey=.*&page=.*&viewtype=.*&category=.{2}',  # 子url
-                '<img class="img-responsive" src="https://i.91p22.net/thumb/(.*?).jpg"/>',  # cdn编号
-                '<span class="video-title title-truncate m-t-5">(.*?)</span>'  # title名字
+                'https://a1016.91p01.com/view_video.php\\?viewkey=.*&page=.*&viewtype=.*&category=.{2}'  # 子url
             ]
 
             url_list_page = re.findall(subpage_re_rules[0], res1.text)
@@ -138,9 +135,9 @@ class My91DownLoad(MyLogger):
                     title_cdn_dict_final[k] = v
                     count_tmp += 1
 
-        self.logger.info(f"fetch_subpage_urls-请求:[{number}]个. 实际获得url : [{len(url_list)}]个")
-        self.logger.info(f"fetch_subpage_urls-请求:[{number}]个. 实际获得title+cdn_code: [{len(title_cdn_dict_final)}]对")
-        self.logger.info(f"title_cdn_dict 是: {title_cdn_dict_final}")
+        self.logger.info(f"fetch_subpage_urls请求url:[{number}]个,实际获得:[{len(url_list)}]个")
+        self.logger.info(f"fetch_subpage_urls请求title+cdn_code:[{number}]个,实际获得:[{len(title_cdn_dict_final)}]对")
+        self.logger.info(f"title_cdn_dict打印: {title_cdn_dict_final}")
         return url_list, title_cdn_dict_final
 
     def __cdn_download(self, title_cdn_dict: dict):
@@ -172,12 +169,12 @@ class My91DownLoad(MyLogger):
             # 删除*.ts
             self.merge_ts_video(source_path=save_path, target_path=save_path, file_name=k)
 
-        self.logger.info(f"下载一共用时: {time.time() - start_time}.2f 秒")
-        self.logger.info("当前所有下载完成，请检查.")
+        self.logger.info(f"下载一共用时:[{time.time() - start_time}.2f]秒")
+        self.logger.info("wonderful..perfect...当前所有下载完成,请检查...")
 
     def merge_ts_video(self, source_path, target_path, file_name: str):
         """
-        合并文件
+        合并指定目录下ts文件
         :param source_path: 源路径
         :param target_path: 目标路径
         :param file_name:  保存文件名
@@ -199,6 +196,49 @@ class My91DownLoad(MyLogger):
             return True
         else:
             return False
+
+    def __fetch_videoUrlInfo2(self, page: int = 0):
+        """
+        主入口:index页面获取每个视频相关的url,cdn编号等信息
+        number: 需要下载的个数,超过24个就会请求多个页码
+        :return:
+        """
+        url_list = []
+        title_cdn_dict = {}
+        req_page_url = config['index']['index_page'].replace("page=1", f"page={page}")
+        self.logger.info(f"__fetch_videoUrlInfo2请求url:{req_page_url}\n")
+        headers = {
+            'User-Agent': config['UA']['user_agent'],
+            'Referer': req_page_url,
+            'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8',
+            'cookie': gl_cookie
+        }
+        res1 = requests.request('GET', req_page_url, headers=headers)
+        subpage_re_rules = [
+            'https://a1016.91p01.com/view_video.php\\?viewkey=.*&page=.*&viewtype=.*&category=.{2}'  # 子url
+        ]
+        url_list_page = re.findall(subpage_re_rules[0], res1.text)
+        cdn_code_page = re.findall('<img class="img-responsive" src="https://i.91p22.net/thumb/(.*?).jpg"',
+                                   res1.text)
+        title_page = re.findall('<span class="video-title title-truncate m-t-5">(.*?)</span>', res1.text)
+
+        # 格式化title名字
+        for i in range(len(title_page)):
+            title_page[i] = title_page[i].replace(' ', '')
+            rstr = r"[\/\\\:\*\?\"\<\>\|]"  # '/ \ : * ? " < > |'
+            title_page[i] = re.sub(rstr, "_", title_page[i])  # 替换为下划线
+
+        url_list_set = list(set(url_list_page))
+        for i in range(len(url_list_set)):
+            url_list.append(url_list_set[i])
+
+        for i in range(len(cdn_code_page)):
+            title_cdn_dict[title_page[i]] = cdn_code_page[i]
+
+        self.logger.info(f"fetch_subpage_urls2请求到url:[{len(url_list)}]个")
+        self.logger.info(f"fetch_subpage_urls2请求到title+cdn_code:[{len(title_cdn_dict)}]对")
+        self.logger.info(f"title_cdn_dict打印: {title_cdn_dict}")
+        return url_list, title_cdn_dict
 
     def fetch_video_urls(self, listA: list, retry_times: int = 0):
         """
@@ -307,8 +347,8 @@ class My91DownLoad(MyLogger):
         :param title_lists:存储了对应的标题 名字的列表
         :return:
         """
-        assert video_lists, "video_lists为空, 请检查"
-        assert title_lists, "title_lists为空，请检查"
+        assert video_lists, "video_lists为空,请检查"
+        assert title_lists, "title_lists为空,请检查"
         # 检查文件夹
         current_day_dir = self.storage_dir
         if not os.path.exists(current_day_dir):
@@ -321,7 +361,7 @@ class My91DownLoad(MyLogger):
             video_name = title_lists[i] + '.mp4'
             headers = {
                 'User-Agent': config['UA']['user_agent'],
-                'Referer': config['index']['index_page'].replace("page=xxx", "page=1"),
+                'Referer': config['index']['index_page'],
                 # 'cookie': config['COOKIE']['value']
                 'cookie': gl_cookie
             }
@@ -431,24 +471,15 @@ class My91DownLoad(MyLogger):
                 "--log-level=3",
                 "--enable-extensions",
                 "--window-size=1920,1080",
-                f"\"--refer={self._favo_video_url}\"",
+                f"\"--refer={config['index']['index_page']}\"",
                 f"\"--user-agent={config['UA']['user_agent']}\"",
             ],
             'dumpio': True,  # 解决浏览器多开卡死
         }
         browser = await launch(**launch_args)
         page = await browser.newPage()
-        # COOKIES 手动改
-        # cookies = {'domain': subpage_url, 'CLIPSHARE': '47348bded4f2af853474ce2a7df2d7c2', '__utmc': '20744104',
-        #            '__utmz': '20744104.1630418255.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none)',
-        #            '__utma': '20744104.746455921.1630418255.1632040468.1632208017.6',
-        #            '__utmb': '20744104.0.10.1632208017',
-        #            'covid191': '6eb5si1Z7T+g1vQvFnkRLcG7C5GO9V/uoO3Q+5IC'}
-        #
-        # for item in cookies:
-        #     await page.setCookie(item)
+
         await page.setExtraHTTPHeaders({'Cookie': gl_cookie})
-        # 'https://0722.91p51.com/view_video.php?viewkey=5f1ce5096ebc088204d5&page=1&viewtype=basic&category=rf',timeout=60000)
         res = await page.goto(subpage_url, options={'timeout': timeout * 1000})  # 跳转
         # await page.screenshot({'path': 'example.png'})  # 截图
         # page.title() res.status res.headers
@@ -463,8 +494,6 @@ class My91DownLoad(MyLogger):
         self.logger.info(str(await page.content()))
         video_ori = list(set(video_ori))
         self.logger.debug(f"video_ori is:{video_ori}\n")
-        # with open(self._current_day+"context"+".log",'a') as f:
-        #     f.write(await page.content())
 
         if not video_ori:
             self.logger.info(f"__pyppeteeer_newget-报错:没有匹配到任何video_url,将直接return.")
@@ -520,10 +549,7 @@ class My91DownLoad(MyLogger):
                     pass
 
                 html = etree.HTML(res2.text)
-                tittle_tmp = html.xpath('//*[@id="videodetails"]/h4/text()')  # //*[@id="videodetails"]/h4
-                # //*[@id="wrapper"]/div[1]/div[3]/div/div/div[1]/div/a
-                # //*[@id="wrapper"]/div[1]/div[3]/div/div/div[2]/div/a
-                # //*[@id="wrapper"]/div[1]/div[3]/div/div/div[3]/div/a
+                tittle_tmp = html.xpath('//*[@id="videodetails"]/h4/text()')
                 temp_t = tittle_tmp[0].replace('\n', '')
                 tittle_f = temp_t.replace(' ', '')
                 rstr = r"[\/\\\:\*\?\"\<\>\|]"  # '/ \ : * ? " < > |'
@@ -560,11 +586,5 @@ if __name__ == '__main__':
     f = My91DownLoad()
     # 最大number=25,单页24个 [作为游客，你每天只可观看25个视频]
     f.start_by_number(number=1, method=0)
-
-    """
-    @staticmethod
-    def strdecode(input, key):
-    """
-    # url = f.strdecode(
-    #     "%3c%73%6f%75%72%63%65%20%73%72%63%3d%27%68%74%74%70%73%3a%2f%2f%63%64%6e%2e%39%31%70%30%37%2e%63%6f%6d%2f%2f%6d%33%75%38%2f%35%32%36%32%39%38%2f%35%32%36%32%39%38%2e%6d%33%75%38%3f%73%74%3d%62%59%75%62%79%4f%45%30%6d%6d%31%4c%69%77%37%54%36%72%41%4b%4f%67%26%65%3d%31%36%33%32%32%31%38%39%30%34%27%20%74%79%70%65%3d%27%61%70%70%6c%69%63%61%74%69%6f%6e%2f%78%2d%6d%70%65%67%55%52%4c%27%3e")
-    # print(url)
+    # # 按照页码下载
+    # f.start_by_page(2)
