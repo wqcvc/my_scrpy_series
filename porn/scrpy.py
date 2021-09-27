@@ -2,7 +2,9 @@
 Date:   2020-8-24
 Author: terry.wang
 topic:  for test fetch 91porn videos and download
-usage:  1.按请求个数: start_by_number(number=2)
+usage:  1.提前在ini中配置好91porn最新网址和浏览器访问cookie
+        2.调用链: start_by_number -> __fetch_videoUrlInfo ->__cdn_download
+        -> CDNDownloader() -> merge_ts_video
 """
 
 from time import time
@@ -65,8 +67,6 @@ class My91DownLoad(MyLogger):
         if method == 0:
             self.__cdn_download(title_cdncode_dict)
         elif method == 1:
-            self.__file_merge(title_cdncode_dict)
-        elif method == 2:
             list_videos, list_titles = self.fetch_video_urls(list_urls)
         else:
             self.logger.info(f"Unknown method.check args:method value")
@@ -90,6 +90,7 @@ class My91DownLoad(MyLogger):
 
         url_list = []
         title_cdn_dict = {}
+        title_cdn_dict_final = {}
         for page in range(pages):
             current_url = config['index']['index_page'].replace("page=xxx", f"page={page + 1}")
             self.logger.info(f"__fetch_videoUrlInfo 请求url : {current_url}\n")
@@ -116,13 +117,11 @@ class My91DownLoad(MyLogger):
                                        res1.text)
             title_page = re.findall('<span class="video-title title-truncate m-t-5">(.*?)</span>', res1.text)
 
-            self.logger.info(f"cdn_code_page is: [{cdn_code_page}]")
             # 格式化title名字
             for i in range(len(title_page)):
                 title_page[i] = title_page[i].replace(' ', '')
                 rstr = r"[\/\\\:\*\?\"\<\>\|]"  # '/ \ : * ? " < > |'
                 title_page[i] = re.sub(rstr, "_", title_page[i])  # 替换为下划线
-                self.logger.info(f"处理后的title名字:[{title_page[i]}]")
 
             url_list_set = list(set(url_list_page))
             for i in range(len(url_list_set)):
@@ -133,11 +132,16 @@ class My91DownLoad(MyLogger):
 
         if 0 < number:
             url_list = url_list[0:number]
-            self.logger.info(f"fetch_subpage_urls-请求:[{number}]个. 实际获得url : [{len(url_list)}]个")
-            self.logger.info(f"fetch_subpage_urls-请求:[{number}]个. 实际获得title+cdn_code: [{len(title_cdn_dict)}]对")
+            count_tmp = 0
+            for k, v in title_cdn_dict.items():
+                if count_tmp < number:
+                    title_cdn_dict_final[k] = v
+                    count_tmp += 1
 
-        self.logger.info(f"title_cdn_dict 是: {title_cdn_dict}")
-        return url_list, title_cdn_dict
+        self.logger.info(f"fetch_subpage_urls-请求:[{number}]个. 实际获得url : [{len(url_list)}]个")
+        self.logger.info(f"fetch_subpage_urls-请求:[{number}]个. 实际获得title+cdn_code: [{len(title_cdn_dict_final)}]对")
+        self.logger.info(f"title_cdn_dict 是: {title_cdn_dict_final}")
+        return url_list, title_cdn_dict_final
 
     def __cdn_download(self, title_cdn_dict: dict):
         """
@@ -146,50 +150,55 @@ class My91DownLoad(MyLogger):
         :return:
         """
         img_url = 'https://i.91p22.net/thumb/xxx.jpg'
+        start_time = time.time()
         for k, v in title_cdn_dict.items():
             save_path = self.storage_dir + '/' + k
             self.logger.info(f"save_path: {save_path}")
+            # 已经存在对应的目录就不在进行ts爬取下载
+            if os.path.exists(save_path):
+                continue
             # 下载ts片段
             t = CDNDownloader(v, save_path)
             t.start()
+            # 必须阻塞执行
+            t.join()
             # 下载封面图
             res_img = requests.get(img_url.replace('xxx', v))
             if res_img.ok is True:
                 with open(save_path + k + '.jpg', 'w') as ff:
                     ff.write(res_img.content)
 
-            # # 下载完成后合并所有ts文件为mp4并删除ts
-            # self.logger.info(f"开始合并文件！")
-            # os.chdir(save_path)
-            # # print(shell_str)
-            # shell_str1 = f'''copy /b *.ts {k}.mp4'''  # copy /b *.ts out.ts
-            # shell_str2 = 'del *.ts'
-            # os.system(shell_str1)
-            # os.system(shell_str2)
+            # 下载完成后合并所有ts文件为mp4
+            # 删除*.ts
+            self.merge_ts_video(source_path=save_path, target_path=save_path, file_name=k)
 
-        self.logger.info("当前所有下载完成，请检查！")
+        self.logger.info(f"下载一共用时: {time.time() - start_time}.2f 秒")
+        self.logger.info("当前所有下载完成，请检查.")
 
-    def __file_merge(self, title_cdn_dict: dict):
+    def merge_ts_video(self, source_path, target_path, file_name: str):
         """
         合并文件
-        :type title_cdn_dict: object
+        :param source_path: 源路径
+        :param target_path: 目标路径
+        :param file_name:  保存文件名
         :return:
         """
-        retval = os.getcwd()
-        print(f"当前工作目录为:{retval}")
-        for k, v in title_cdn_dict.items():
-            save_path = self.storage_dir + r'/' + k
-            self.logger.info(f"save_path: {save_path}")
-            # 下载完成后合并所有ts文件为mp4并删除ts
-            self.logger.info(f"开始合并文件！")
-            os.chdir(save_path)
-            # print(shell_str)
-            shell_str1 = f'''copy /b *.ts {k}.mp4'''  # copy /b *.ts out.ts
-            shell_str2 = 'del *.ts'
-            os.system(shell_str1)
-            os.system(shell_str2)
+        all_ts = os.listdir(source_path)
+        merge_file_name = target_path + '/' + file_name
+        # self.logger.info(merge_file_name)
+        with open(merge_file_name, 'wb+') as f:
+            for i in range(len(all_ts)):
+                ts_video_path = os.path.join(source_path, all_ts[i])
+                f.write(open(ts_video_path, 'rb').read())
 
-        self.logger.info("当前所有文件夹合并完成，请检查！")
+        if os.path.exists(merge_file_name):
+            shell_str1 = 'del ' + source_path + '\\' + '*.ts'
+            os_res = os.system(shell_str1)
+            if os_res == 0:
+                self.logger.info(f"[{merge_file_name}]merge完成,删除*.ts文件完成")
+            return True
+        else:
+            return False
 
     def fetch_video_urls(self, listA: list, retry_times: int = 0):
         """
@@ -550,8 +559,7 @@ class My91DownLoad(MyLogger):
 if __name__ == '__main__':
     f = My91DownLoad()
     # 最大number=25,单页24个 [作为游客，你每天只可观看25个视频]
-    # f.start_by_number(number=1, method=0)
-    f.start_by_number(number=1, method=1)
+    f.start_by_number(number=1, method=0)
 
     """
     @staticmethod
