@@ -1,13 +1,16 @@
 python爬虫系列：
 
-一.porn:
-  介绍：91porn网站的视频爬虫+破解下载视频
+####一.91porn视频下载:
+  ```介绍：91porn网站的视频爬虫+破解下载视频 最新版本根据 cdn编号下载
   功能列表：
     1.按请求个数爬取并自动下载: start_by_number(number=2)
     2.按请求页数爬取并自动下载: start_by_page(page=1)
+    3.按照url单个下载：start_by_url(url)
+```
 
 
-二.fund
+####二.基金爬虫fund
+```
   介绍：针对天天基金的各种基金信息的爬虫
   功能列表：
     1.获取基金列表的实时涨跌幅
@@ -36,8 +39,10 @@ python爬虫系列：
     12.定期更新数据库内容
       to do
     13.to be continue...
-
+```
   
-三.myflask
+####三.myflask
+  ```
   规划中
+  ```
 

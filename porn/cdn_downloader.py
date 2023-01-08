@@ -14,7 +14,8 @@ import os
 class CDNDownloader(threading.Thread):
     def __init__(self, cdn_code, save_path):
         super(CDNDownloader, self).__init__()  # 继承父类的__init__函数
-        self.base_url = "https://cdn.91p07.com//m3u8/"
+        # self.base_url = "https://cdn.91p07.com//m3u8/"
+        self.base_url = "https://la2.killcovid2021.com/m3u8/"
         self.cdn_code = cdn_code
         self.save_path = save_path
 

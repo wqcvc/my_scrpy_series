@@ -1,0 +1,7 @@
+__pycache__/
+../fund/__pycache__/
+/porn/*.log
+/porn/video
+/porn/logs
+/fund/*.xlsx
+/fund/*.json

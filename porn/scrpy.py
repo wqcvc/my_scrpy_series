@@ -30,7 +30,10 @@ from lib_logger import MyLogger
 config = ConfigParser()
 config.read("urls_rules.ini")
 
-gl_cookie = "CLIPSHARE=47348bded4f2af853474ce2a7df2d7c2; __utmc=20744104; __utmz=20744104.1630418255.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utma=20744104.746455921.1630418255.1632658768.1632661630.14; __utmb=20744104.0.10.1632661630; covid=0f5dt+u+C8aGzQtx1sicxRb+/OMtttxzw0HI+ZqE"
+gl_cookie = config.get('COOKIES', 'cookie')
+
+
+# gl_cookie = 'CLIPSHARE=47348bded4f2af853474ce2a7df2d7c2; __utmc=20744104; __utmz=20744104.1630418255.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); views_t=1294; __utma=20744104.746455921.1630418255.1668992974.1669171663.336; __utmb=20744104.0.10.1669171663'
 
 
 class My91DownLoad(MyLogger):
@@ -49,6 +52,7 @@ class My91DownLoad(MyLogger):
         if not os.path.exists(self.storage_dir):
             os.makedirs(self.storage_dir)
 
+    # 废弃，暂时没用了，可以删除
     def start_by_number(self, number: int = 0, method: int = 0):
         """
         按照个数下载video
@@ -56,11 +60,12 @@ class My91DownLoad(MyLogger):
         :param method: 方式：0-cdn_ts流下载 1-request+strencode加密解密方式(废弃)
         :return:
         """
-        list_urls, title_cdn_dict = self.__fetch_videoUrlInfo(number)
+        url_list, title_cdn = self.__fetch_videoinfo_by_number(number)
         if method == 0:
-            self.__cdn_download(title_cdn_dict)
+            self.__cdn_download(title_cdn)
+        # 废弃：method==1方式
         elif method == 1:
-            list_videos, list_titles = self.fetch_video_urls(list_urls)
+            list_videos, list_titles = self.fetch_video_urls(url_list)
             self.logger.info(f"titles/videos列表打印: [{list_titles}]\n [{list_videos}]")
             self.download_videos(title_lists=list_titles, video_lists=list_videos)
         else:
@@ -79,12 +84,21 @@ class My91DownLoad(MyLogger):
         :param page: 指定的页码
         :return:
         """
-        list_urls, title_cdn_dict = self.__fetch_videoUrlInfo2(page)
-        self.__cdn_download(title_cdn_dict)
+        url_list, title_cdn = self.__fetch_videoinfo_by_page(page)
+        self.__cdn_download(title_cdn)
 
-    def __fetch_videoUrlInfo(self, number: int = 0):
+    def start_by_url(self, url: str):
         """
-        主入口:index页面获取每个视频相关的url,cdn编号等信息
+        按照入参单个视频详细url解析 并 下载
+        :param url: 视频播放url单个
+        :return:
+        """
+        title_cdnCode = self.__fetch_videoinfo_by_url(url)
+        self.__cdn_download(title_cdnCode)
+
+    def __fetch_videoinfo_by_number(self, number: int = 0):
+        """
+        按照个数 解析 获取每个视频相关的url,标题,cdn编号等信息
         number: 需要下载的个数,超过24个就会请求多个页码
         :return:
         """
@@ -95,12 +109,11 @@ class My91DownLoad(MyLogger):
         title_cdn_dict_final = {}
         for page in range(pages):
             current_url = config['index']['index_page'].replace("page=1", f"page={page + 1}")
-            self.logger.info(f"__fetch_videoUrlInfo 请求url : {current_url}")
+            self.logger.info(f"__fetch_videoinfo_by_number 请求url : {current_url}")
             headers = {
                 'User-Agent': config['UA']['user_agent'],
                 'Referer': current_url,
                 'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8',
-                # 'cookie': config['COOKIE']['value']
                 'cookie': gl_cookie
             }
             res1 = requests.request('GET', current_url, headers=headers)
@@ -139,6 +152,149 @@ class My91DownLoad(MyLogger):
         self.logger.info(f"fetch_subpage_urls请求title+cdn_code:[{number}]个,实际获得:[{len(title_cdn_dict_final)}]对")
         self.logger.info(f"title_cdn_dict打印: {title_cdn_dict_final}")
         return url_list, title_cdn_dict_final
+
+    def __fetch_videoinfo_by_page(self, page: int = 0):
+        """
+        按照入参指定的页数 获取每页 视频相关的子url列表,子url标题,子视频下载需要的cdn编号 信息
+        :param page: 具体下载的页码 eg:page=1 == 第一页的视频url：https://a1016.91p01.com/v.php?category=rf&viewtype=basic&page=1
+        :return:
+        """
+        url_list = []
+        title_cdn_dict = {}
+        req_page_url = config['index']['index_page'].replace("page=1", f"page={page}")
+        self.logger.info(f"__fetch_videoinfo_by_page 请求url:{req_page_url}\n")
+        headers = {
+            'User-Agent': config['UA']['user_agent'],
+            'Referer': req_page_url,
+            'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8',
+            'cookie': gl_cookie
+        }
+        res1 = requests.request('GET', req_page_url, headers=headers)
+        subpage_re_rules = [
+            'https://a1016.91p01.com/view_video.php\\?viewkey=.*&page=.*&viewtype=.*&category=.{2}'  # 子url
+        ]
+        url_list_page = re.findall(subpage_re_rules[0], res1.text)
+
+        cdn_code_page = re.findall('<img class="img-responsive" src="https://.*/thumb/(.*?).jpg"',
+                                   res1.text)
+        title_page = re.findall('<span class="video-title title-truncate m-t-5">(.*?)</span>', res1.text)
+
+        # 格式化title名字
+        for i in range(len(title_page)):
+            title_page[i] = title_page[i].replace(' ', '')
+            rstr = r"[\/\\\:\*\?\"\<\>\|]"  # '/ \ : * ? " < > |'
+            title_page[i] = re.sub(rstr, "_", title_page[i])  # 替换为下划线
+            pattern = re.compile('[，。：“”【】《》？；、（）‘’『』「」﹃﹄〔〕—·]')
+            fps = re.findall(pattern, title_page[i])
+            if len(fps) > 0:
+                # title_page[i] = title_page[i].replace('，', ',')
+                # title_page[i] = title_page[i].replace('。', '.')
+                # title_page[i] = title_page[i].replace('：', ':')
+                # title_page[i] = title_page[i].replace('“', '"')
+                title_page[i] = title_page[i].replace('【', '[')
+                title_page[i] = title_page[i].replace('】', ']')
+                # title_page[i] = title_page[i].replace('《', '<')
+                # title_page[i] = title_page[i].replace('》', '>')
+                # title_page[i] = title_page[i].replace('？', '?')
+                # title_page[i] = title_page[i].replace('；', ':')
+                title_page[i] = title_page[i].replace('、', ',')
+                title_page[i] = title_page[i].replace('（', '(')
+                title_page[i] = title_page[i].replace('）', ')')
+                title_page[i] = title_page[i].replace('‘', "'")
+                title_page[i] = title_page[i].replace('’', "'")
+                title_page[i] = title_page[i].replace('’', "'")
+                title_page[i] = title_page[i].replace('『', "[")
+                title_page[i] = title_page[i].replace('』', "]")
+                title_page[i] = title_page[i].replace('「', "[")
+                title_page[i] = title_page[i].replace('」', "]")
+                title_page[i] = title_page[i].replace('﹃', "[")
+                title_page[i] = title_page[i].replace('﹄', "]")
+                title_page[i] = title_page[i].replace('〔', "{")
+                title_page[i] = title_page[i].replace('〕', "}")
+                title_page[i] = title_page[i].replace('—', "-")
+                title_page[i] = title_page[i].replace('·', ".")
+
+        url_list_set = list(set(url_list_page))
+        for i in range(len(url_list_set)):
+            url_list.append(url_list_set[i])
+
+        self.logger.info(f"cdn_code_page is: {cdn_code_page}")
+
+        for i in range(len(cdn_code_page)):
+            title_cdn_dict[title_page[i]] = cdn_code_page[i]
+
+        self.logger.info(f"fetch_subpage_urls2请求到url:[{len(url_list)}]个")
+        self.logger.info(f"fetch_subpage_urls2请求到title+cdn_code:[{len(title_cdn_dict)}]对")
+        self.logger.info(f"title_cdn_dict打印: {title_cdn_dict}")
+        # 返回子url列表 (子标题 子标题对应的cnd编号)字典
+        return url_list, title_cdn_dict
+
+    def __fetch_videoinfo_by_url(self, url: str):
+        """
+        按照视频具体url解析获取 单个视频相关的标题,下载需要的cdn编号
+        :param url: eg：https://a1016.91p01.com/view_video.php?viewkey=be76857229eab10e7047&page=1&viewtype=basic&category=mr
+        :return:
+        """
+        title_cdn_dict = {}
+        self.logger.info(f"__fetch_videoinfo_by_url 请求url:{url}\n")
+        headers = {
+            'User-Agent': config['UA']['user_agent'],
+            'Referer': config['index']['index_page'],
+            'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8',
+            'cookie': gl_cookie
+        }
+        res1 = requests.request('GET', url, headers=headers)
+        # re_rule = '<h4 class="login_register_header" align=left><img src=images/91.png>(.*?)</h4><br>'
+        with open('url_temp.txt', 'w+') as f:
+            f.write(res1.text)
+        title_name = re.findall('<title>      (.*?)\s', res1.text)
+        self.logger.info(title_name)
+        title_name = title_name[0]
+        cdn_code = re.findall(
+            ' <video id="player_one" class="video-js vjs-sublime-skin vjs-16-9" preload="auto" width="100%"  controls poster="https://img.91p51.com/thumb/(.*?).jpg"',
+            res1.text)
+        cdn_code = cdn_code[0]
+        self.logger.info(cdn_code)
+        # 格式化title名字
+        title_name = title_name.replace(' ', '')
+        rstr = r"[\/\\\:\*\?\"\<\>\|]"  # '/ \ : * ? " < > |'
+        title_name = re.sub(rstr, "_", title_name)  # 替换为下划线
+        pattern = re.compile('[，。：“”【】《》？；、（）‘’『』「」﹃﹄〔〕—·]')
+        fps = re.findall(pattern, title_name)
+        if len(fps) > 0:
+            # title_page[i] = title_page[i].replace('，', ',')
+            # title_page[i] = title_page[i].replace('。', '.')
+            # title_page[i] = title_page[i].replace('：', ':')
+            # title_page[i] = title_page[i].replace('“', '"')
+            title_name = title_name.replace('【', '[')
+            title_name = title_name.replace('】', ']')
+            # title_page[i] = title_page[i].replace('《', '<')
+            # title_page[i] = title_page[i].replace('》', '>')
+            # title_page[i] = title_page[i].replace('？', '?')
+            # title_page[i] = title_page[i].replace('；', ':')
+            title_name = title_name.replace('、', ',')
+            title_name = title_name.replace('（', '(')
+            title_name = title_name.replace('）', ')')
+            title_name = title_name.replace('‘', "'")
+            title_name = title_name.replace('’', "'")
+            title_name = title_name.replace('’', "'")
+            title_name = title_name.replace('『', "[")
+            title_name = title_name.replace('』', "]")
+            title_name = title_name.replace('「', "[")
+            title_name = title_name.replace('」', "]")
+            title_name = title_name.replace('﹃', "[")
+            title_name = title_name.replace('﹄', "]")
+            title_name = title_name.replace('〔', "{")
+            title_name = title_name.replace('〕', "}")
+            title_name = title_name.replace('—', "-")
+            title_name = title_name.replace('·', ".")
+
+        self.logger.info(f"title_name / cdn_code is: {title_name} / {cdn_code}")
+
+        title_cdn_dict[title_name] = cdn_code
+
+        # 返回子url列表 (子标题 子标题对应的cnd编号)字典
+        return title_cdn_dict
 
     def __cdn_download(self, title_cdn_dict: dict):
         """
@@ -206,49 +362,7 @@ class My91DownLoad(MyLogger):
         else:
             return False
 
-    def __fetch_videoUrlInfo2(self, page: int = 0):
-        """
-        主入口:index页面获取每个视频相关的url,cdn编号等信息
-        number: 需要下载的个数,超过24个就会请求多个页码
-        :return:
-        """
-        url_list = []
-        title_cdn_dict = {}
-        req_page_url = config['index']['index_page'].replace("page=1", f"page={page}")
-        self.logger.info(f"__fetch_videoUrlInfo2请求url:{req_page_url}\n")
-        headers = {
-            'User-Agent': config['UA']['user_agent'],
-            'Referer': req_page_url,
-            'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8',
-            'cookie': gl_cookie
-        }
-        res1 = requests.request('GET', req_page_url, headers=headers)
-        subpage_re_rules = [
-            'https://a1016.91p01.com/view_video.php\\?viewkey=.*&page=.*&viewtype=.*&category=.{2}'  # 子url
-        ]
-        url_list_page = re.findall(subpage_re_rules[0], res1.text)
-        cdn_code_page = re.findall('<img class="img-responsive" src="https://i.91p22.net/thumb/(.*?).jpg"',
-                                   res1.text)
-        title_page = re.findall('<span class="video-title title-truncate m-t-5">(.*?)</span>', res1.text)
-
-        # 格式化title名字
-        for i in range(len(title_page)):
-            title_page[i] = title_page[i].replace(' ', '')
-            rstr = r"[\/\\\:\*\?\"\<\>\|]"  # '/ \ : * ? " < > |'
-            title_page[i] = re.sub(rstr, "_", title_page[i])  # 替换为下划线
-
-        url_list_set = list(set(url_list_page))
-        for i in range(len(url_list_set)):
-            url_list.append(url_list_set[i])
-
-        for i in range(len(cdn_code_page)):
-            title_cdn_dict[title_page[i]] = cdn_code_page[i]
-
-        self.logger.info(f"fetch_subpage_urls2请求到url:[{len(url_list)}]个")
-        self.logger.info(f"fetch_subpage_urls2请求到title+cdn_code:[{len(title_cdn_dict)}]对")
-        self.logger.info(f"title_cdn_dict打印: {title_cdn_dict}")
-        return url_list, title_cdn_dict
-
+    # 已废弃
     def fetch_video_urls(self, listA: list, retry_times: int = 0):
         """
         详情页入口:获取所有子详情页对应的各种类型下载urls
@@ -349,6 +463,7 @@ class My91DownLoad(MyLogger):
 
         return video_lists, title_lists
 
+    # 已废弃
     def download_videos(self, video_lists: list, title_lists: list):
         """
         下载所有video
@@ -410,13 +525,7 @@ class My91DownLoad(MyLogger):
             time.sleep(3)
         self.logger.info(f"[wonderful!!!]所有下载任务请求完成,请检查...")
 
-    def proxy_set(self):
-        """
-        设置代理访问,to do
-        :return:
-        """
-        pass
-
+    # 已废弃
     @staticmethod
     def strdecode(input, key):
         """
@@ -441,85 +550,7 @@ class My91DownLoad(MyLogger):
         code = pattern.findall(code)
         return code[0]
 
-    def __random_ip(self):
-        """
-        生成随机ip
-        :return:
-        """
-        a = str(random.randint(1, 255))
-        b = str(random.randint(1, 255))
-        c = str(random.randint(1, 255))
-        d = str(random.randint(1, 255))
-        random_ip = a + '.' + b + '.' + c + '.' + d
-
-        return random_ip
-
-    def __js_exec(self, strencode: list):
-        """
-        调用js解密：pyexcejs库功能 node.js/phantomjs...
-        :param strencode: 实际解密参数
-        :return:
-        """
-        print(f"run environ: {execjs.get().name}")
-        ctx = execjs.compile(open(r"strencode.js").read())
-        ctx.call("strencode", strencode[0], strencode[1])
-
-    async def __pyppeteeer_newget(self, subpage_url):
-        # self.logger.info(f"开始请求video_url")
-        start = time.time()
-        timeout = 180
-        # 具体用法参考:  https://www.cnblogs.com/trojan-z/p/12072211.html
-        launch_args = {
-            "headless": True,  # 关闭无头浏览器
-            'devtools': False,  # 控制界面的显示，用来调试
-            "args": [
-                "--start-maximized",
-                "--no-sandbox",  # --no-sandbox 在 docker 里使用时需要加入的参数，不然会报错
-                "--disable-infobars",
-                "--ignore-certificate-errors",
-                "--log-level=3",
-                "--enable-extensions",
-                "--window-size=1920,1080",
-                f"\"--refer={config['index']['index_page']}\"",
-                f"\"--user-agent={config['UA']['user_agent']}\"",
-            ],
-            'dumpio': True,  # 解决浏览器多开卡死
-        }
-        browser = await launch(**launch_args)
-        page = await browser.newPage()
-
-        await page.setExtraHTTPHeaders({'Cookie': gl_cookie})
-        res = await page.goto(subpage_url, options={'timeout': timeout * 1000})  # 跳转
-        # await page.screenshot({'path': 'example.png'})  # 截图
-        # page.title() res.status res.headers
-
-        # get video download links
-        viode_re_rules = [
-            '(http.?://.*.91p\d{2}.com/.?mp43/.*.mp4\\?.*=.*f=[^"]*)',
-        ]
-        with open("tmp.html", "w", encoding='utf-8') as f:
-            f.write(str(await page.content()))
-        video_ori = re.findall(viode_re_rules[0], str(await page.content()))
-        self.logger.info(str(await page.content()))
-        video_ori = list(set(video_ori))
-        self.logger.debug(f"video_ori is:{video_ori}\n")
-
-        if not video_ori:
-            self.logger.info(f"__pyppeteeer_newget-报错:没有匹配到任何video_url,将直接return.")
-            await browser.close()
-            return None
-        else:  # 特殊处理
-            if len(video_ori) > 1:
-                video_f = min((word for word in video_ori if word), key=len)
-            else:
-                video_f = video_ori[0]
-            self.logger.info(f"\n获取到的video_url是:{video_f}\n")
-
-        await browser.close()  # 关闭
-        end = time.time()
-        self.logger.info(f"请求花费时间:[{end - start}]")
-        return video_f
-
+    # 已废弃
     def fetch_video_pypt(self, listB: list):
         """
         获取所有下载链接新接口:使用chrome的puppeteer py版本库:pyppeteer.
@@ -590,10 +621,75 @@ class My91DownLoad(MyLogger):
 
         return video_lists, title_lists
 
+    # 已废弃
+    async def __pyppeteeer_newget(self, subpage_url):
+        # self.logger.info(f"开始请求video_url")
+        start = time.time()
+        timeout = 180
+        # 具体用法参考:  https://www.cnblogs.com/trojan-z/p/12072211.html
+        launch_args = {
+            "headless": True,  # 关闭无头浏览器
+            'devtools': False,  # 控制界面的显示，用来调试
+            "args": [
+                "--start-maximized",
+                "--no-sandbox",  # --no-sandbox 在 docker 里使用时需要加入的参数，不然会报错
+                "--disable-infobars",
+                "--ignore-certificate-errors",
+                "--log-level=3",
+                "--enable-extensions",
+                "--window-size=1920,1080",
+                f"\"--refer={config['index']['index_page']}\"",
+                f"\"--user-agent={config['UA']['user_agent']}\"",
+            ],
+            'dumpio': True,  # 解决浏览器多开卡死
+        }
+        browser = await launch(**launch_args)
+        page = await browser.newPage()
+
+        await page.setExtraHTTPHeaders({'Cookie': gl_cookie})
+        res = await page.goto(subpage_url, options={'timeout': timeout * 1000})  # 跳转
+        # await page.screenshot({'path': 'example.png'})  # 截图
+        # page.title() res.status res.headers
+
+        # get video download links
+        viode_re_rules = [
+            '(http.?://.*.91p\d{2}.com/.?mp43/.*.mp4\\?.*=.*f=[^"]*)',
+        ]
+        with open("tmp.html", "w", encoding='utf-8') as f:
+            f.write(str(await page.content()))
+        video_ori = re.findall(viode_re_rules[0], str(await page.content()))
+        self.logger.info(str(await page.content()))
+        video_ori = list(set(video_ori))
+        self.logger.debug(f"video_ori is:{video_ori}\n")
+
+        if not video_ori:
+            self.logger.info(f"__pyppeteeer_newget-报错:没有匹配到任何video_url,将直接return.")
+            await browser.close()
+            return None
+        else:  # 特殊处理
+            if len(video_ori) > 1:
+                video_f = min((word for word in video_ori if word), key=len)
+            else:
+                video_f = video_ori[0]
+            self.logger.info(f"\n获取到的video_url是:{video_f}\n")
+
+        await browser.close()  # 关闭
+        end = time.time()
+        self.logger.info(f"请求花费时间:[{end - start}]")
+        return video_f
+
 
 if __name__ == '__main__':
+    # 使用说明
+    # # 1.首先你得可以翻墙
+    # # 2.其次运行前记得更新 urls_rules.ini 文件中的 cookies
     f = My91DownLoad()
-    # 最大number=25,单页24个 [作为游客，你每天只可观看25个视频]
-    # f.start_by_number(number=2, method=0)
+    # # 按照个数下载
+    # f.start_by_number(number=2)
+
     # # 按照页码下载
-    f.start_by_page(1)
+    # f.start_by_page(1)  # page 4 问题
+
+    # # 单个详细url下载
+    url3 = 'https://a1016.91p01.com/view_video.php?own=1&viewkey=37f817333d91a44afe18'
+    f.start_by_url(url=url3)  # page 4 问题
