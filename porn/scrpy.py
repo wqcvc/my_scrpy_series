@@ -245,8 +245,8 @@ class My91DownLoad(MyLogger):
         }
         res1 = requests.request('GET', url, headers=headers)
         # re_rule = '<h4 class="login_register_header" align=left><img src=images/91.png>(.*?)</h4><br>'
-        with open('url_temp.txt', 'w+') as f:
-            f.write(res1.text)
+        # with open('url_temp.txt', 'w+') as f:
+        #     f.write(res1.text)
         title_name = re.findall('<title>      (.*?)\s', res1.text)
         self.logger.info(title_name)
         title_name = title_name[0]
@@ -325,9 +325,10 @@ class My91DownLoad(MyLogger):
 
             # 下载完成后合并所有ts文件为mp4
             # 删除*.ts
-            self.merge_ts_video(source_path=save_path, target_path=save_path, file_name=k + '.mp4')
-
-        self.logger.info(f"下载一共用时:[{time.time() - start_time}.2f]秒")
+            filename = k
+            self.merge_ts_video(source_path=save_path, target_path=save_path, file_name=filename)
+        use_time = time.time() - start_time
+        self.logger.info(f"下载一共用时:[{use_time}]秒")
         self.logger.info("wonderful..perfect...当前所有下载完成,请检查...")
 
     def merge_ts_video(self, source_path, target_path, file_name: str):
@@ -335,11 +336,12 @@ class My91DownLoad(MyLogger):
         合并指定目录下ts文件
         :param source_path: 源路径
         :param target_path: 目标路径
-        :param file_name:  保存文件名
+        :param file_name:  保存文件名,不带后缀ts or mp4
         :return:
         """
         all_ts = os.listdir(source_path)
         merge_file_name = target_path + '/' + file_name
+        final_file_name = merge_file_name + '.ts'
         # self.logger.info(merge_file_name)
         with open(merge_file_name, 'wb+') as f:
             for i in range(len(all_ts)):
@@ -356,8 +358,11 @@ class My91DownLoad(MyLogger):
                     if name.endswith(".ts"):
                         n += 1
                         os.remove(os.path.join(root, name))
-            self.logger.info(f"共删除了{n}个.ts文件")
-            self.logger.info(f"[{merge_file_name}] merge完成,删除*.ts文件完成")
+            self.logger.info(f"merge完成, 共成功删除{n}个.ts文件")
+            os.rename(merge_file_name, final_file_name)
+            self.logger.info(f'文件已经重命名为[{final_file_name}]')
+            file_size_M = int(os.path.getsize(final_file_name))/(1024 * 1024)
+            self.logger.info(f'文件大小为为[{file_size_M}M]')
             return True
         else:
             return False
@@ -678,7 +683,6 @@ class My91DownLoad(MyLogger):
         self.logger.info(f"请求花费时间:[{end - start}]")
         return video_f
 
-
 if __name__ == '__main__':
     # 使用说明
     # # 1.首先你得可以翻墙
@@ -687,9 +691,9 @@ if __name__ == '__main__':
     # # 按照个数下载
     # f.start_by_number(number=2)
 
-    # # 按照页码下载
-    # f.start_by_page(1)  # page 4 问题
+    #按照页码下载
+    f.start_by_page(1)
 
-    # # 单个详细url下载
-    url3 = 'https://a1016.91p01.com/view_video.php?own=1&viewkey=37f817333d91a44afe18'
-    f.start_by_url(url=url3)  # page 4 问题
+    # # # 单个详细url下载
+    # url3 = 'https://a1016.91p01.com/view_video.php?viewkey=c57eab27b1acc66e6e5e&page=1&viewtype=basic&category=mr'
+    # f.start_by_url(url=url3)  # page 4 问题
