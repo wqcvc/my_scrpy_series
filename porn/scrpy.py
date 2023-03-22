@@ -80,11 +80,21 @@ class My91DownLoad(MyLogger):
 
     def start_by_page(self, page: int = 0):
         """
-        按照特定的页数下载那一页的24个video
+        按照首页的的页数数下载那一页的24个video
         :param page: 指定的页码
         :return:
         """
         url_list, title_cdn = self.__fetch_videoinfo_by_page(page)
+        self.__cdn_download(title_cdn)
+
+    def start_by_personal_page(self, url: str):
+        """
+        按照用户个人详情页面页数下载那一页的video
+        :param page: 指定的个人用户页码，eg:https://a1016.91p01.com/uvideos.php?UID
+            =8cb7iJSDiMTSGmfVjVgnoeAdIyZOeae9BBFNKYzLp2L7wAJCSg&type=public&page=1
+        :return:
+        """
+        url_list, title_cdn = self.__fetch_videoinfo_by_personnal_page(url)
         self.__cdn_download(title_cdn)
 
     def start_by_url(self, url: str):
@@ -170,6 +180,81 @@ class My91DownLoad(MyLogger):
             'cookie': gl_cookie
         }
         res1 = requests.request('GET', req_page_url, headers=headers)
+        subpage_re_rules = [
+            'https://a1016.91p01.com/view_video.php\\?viewkey=.*&page=.*&viewtype=.*&category=.{2}'  # 子url
+        ]
+        url_list_page = re.findall(subpage_re_rules[0], res1.text)
+
+        cdn_code_page = re.findall('<img class="img-responsive" src="https://.*/thumb/(.*?).jpg"',
+                                   res1.text)
+        title_page = re.findall('<span class="video-title title-truncate m-t-5">(.*?)</span>', res1.text)
+
+        # 格式化title名字
+        for i in range(len(title_page)):
+            title_page[i] = title_page[i].replace(' ', '')
+            rstr = r"[\/\\\:\*\?\"\<\>\|]"  # '/ \ : * ? " < > |'
+            title_page[i] = re.sub(rstr, "_", title_page[i])  # 替换为下划线
+            pattern = re.compile('[，。：“”【】《》？；、（）‘’『』「」﹃﹄〔〕—·]')
+            fps = re.findall(pattern, title_page[i])
+            if len(fps) > 0:
+                # title_page[i] = title_page[i].replace('，', ',')
+                # title_page[i] = title_page[i].replace('。', '.')
+                # title_page[i] = title_page[i].replace('：', ':')
+                # title_page[i] = title_page[i].replace('“', '"')
+                title_page[i] = title_page[i].replace('【', '[')
+                title_page[i] = title_page[i].replace('】', ']')
+                # title_page[i] = title_page[i].replace('《', '<')
+                # title_page[i] = title_page[i].replace('》', '>')
+                # title_page[i] = title_page[i].replace('？', '?')
+                # title_page[i] = title_page[i].replace('；', ':')
+                title_page[i] = title_page[i].replace('、', ',')
+                title_page[i] = title_page[i].replace('（', '(')
+                title_page[i] = title_page[i].replace('）', ')')
+                title_page[i] = title_page[i].replace('‘', "'")
+                title_page[i] = title_page[i].replace('’', "'")
+                title_page[i] = title_page[i].replace('’', "'")
+                title_page[i] = title_page[i].replace('『', "[")
+                title_page[i] = title_page[i].replace('』', "]")
+                title_page[i] = title_page[i].replace('「', "[")
+                title_page[i] = title_page[i].replace('」', "]")
+                title_page[i] = title_page[i].replace('﹃', "[")
+                title_page[i] = title_page[i].replace('﹄', "]")
+                title_page[i] = title_page[i].replace('〔', "{")
+                title_page[i] = title_page[i].replace('〕', "}")
+                title_page[i] = title_page[i].replace('—', "-")
+                title_page[i] = title_page[i].replace('·', ".")
+
+        url_list_set = list(set(url_list_page))
+        for i in range(len(url_list_set)):
+            url_list.append(url_list_set[i])
+
+        self.logger.info(f"cdn_code_page is: {cdn_code_page}")
+
+        for i in range(len(cdn_code_page)):
+            title_cdn_dict[title_page[i]] = cdn_code_page[i]
+
+        self.logger.info(f"fetch_subpage_urls2请求到url:[{len(url_list)}]个")
+        self.logger.info(f"fetch_subpage_urls2请求到title+cdn_code:[{len(title_cdn_dict)}]对")
+        self.logger.info(f"title_cdn_dict打印: {title_cdn_dict}")
+        # 返回子url列表 (子标题 子标题对应的cnd编号)字典
+        return url_list, title_cdn_dict
+
+    def __fetch_videoinfo_by_personnal_page(self, url: str):
+        """
+        根据个人详细页面的url获取详细的video列表
+        :param url: 个人详情页的url
+        :return:
+        """
+        url_list = []
+        title_cdn_dict = {}
+        self.logger.info(f"__fetch_videoinfo_by_personnal_page 请求url:{url}\n")
+        headers = {
+            'User-Agent': config['UA']['user_agent'],
+            'Referer': url,
+            'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8',
+            'cookie': gl_cookie
+        }
+        res1 = requests.request('GET', url, headers=headers)
         subpage_re_rules = [
             'https://a1016.91p01.com/view_video.php\\?viewkey=.*&page=.*&viewtype=.*&category=.{2}'  # 子url
         ]
@@ -361,7 +446,7 @@ class My91DownLoad(MyLogger):
             self.logger.info(f"merge完成, 共成功删除{n}个.ts文件")
             os.rename(merge_file_name, final_file_name)
             self.logger.info(f'文件已经重命名为[{final_file_name}]')
-            file_size_M = int(os.path.getsize(final_file_name))/(1024 * 1024)
+            file_size_M = int(os.path.getsize(final_file_name)) / (1024 * 1024)
             self.logger.info(f'文件大小为为[{file_size_M}M]')
             return True
         else:
@@ -683,6 +768,7 @@ class My91DownLoad(MyLogger):
         self.logger.info(f"请求花费时间:[{end - start}]")
         return video_f
 
+
 if __name__ == '__main__':
     # 使用说明
     # # 1.首先你得可以翻墙
@@ -691,9 +777,13 @@ if __name__ == '__main__':
     # # 按照个数下载
     # f.start_by_number(number=2)
 
-    #按照页码下载
-    f.start_by_page(1)
+    # # 按照首页页码下载
+    f.start_by_page(8)
 
     # # # 单个详细url下载
-    # url3 = 'https://a1016.91p01.com/view_video.php?viewkey=c57eab27b1acc66e6e5e&page=1&viewtype=basic&category=mr'
+    # url3 = 'https://a1016.91p01.com/view_video.php?c=t&viewkey=17580bab595051734fae'
     # f.start_by_url(url=url3)  # page 4 问题
+
+    # 按照个人详细页url进行下载
+    # url_p = 'https://a1016.91p01.com/uvideos.php?UID=8cb7iJSDiMTSGmfVjVgnoeAdIyZOeae9BBFNKYzLp2L7wAJCSg&type=public&page=3'
+    # f.start_by_personal_page(url_p)
