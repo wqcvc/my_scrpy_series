@@ -778,12 +778,12 @@ if __name__ == '__main__':
     # f.start_by_number(number=2)
 
     # # 按照首页页码下载
-    f.start_by_page(8)
+    f.start_by_page(10)
 
     # # # 单个详细url下载
-    # url3 = 'https://a1016.91p01.com/view_video.php?c=t&viewkey=17580bab595051734fae'
+    # url3 = 'https://a1016.91p01.com/view_video.php?own=1&viewkey=672204739'
     # f.start_by_url(url=url3)  # page 4 问题
 
     # 按照个人详细页url进行下载
-    # url_p = 'https://a1016.91p01.com/uvideos.php?UID=8cb7iJSDiMTSGmfVjVgnoeAdIyZOeae9BBFNKYzLp2L7wAJCSg&type=public&page=3'
+    # url_p = 'https://a1016.91p01.com/view_video.php?viewkey=34eb5bb071f40bf00e48&c=t&viewtype=&category='
     # f.start_by_personal_page(url_p)

@@ -33,5 +33,36 @@ select 成立时间 from fund.funds_company_info group by '成立时间';
 select * from User;
 
 
+# flask库
+CREATE SCHEMA `flask`;
+
+CREATE TABLE flask.test1(
+  id INT PRIMARY KEY AUTO_INCREMENT COMMENT '学号',
+  name VARCHAR(200) COMMENT '姓名',
+  age    int COMMENT '年龄'
+) COMMENT='mock_test';
+
+select * from flask.test1;
+
+# PearAdminFlask
+CREATE SCHEMA `PearAdminFlask`;
+drop schema `PearAdminFlask`;
 
 
+# test_tool库
+CREATE SCHEMA `test_tool` ;
+
+CREATE TABLE test_tool.test1(
+  id INT PRIMARY KEY AUTO_INCREMENT COMMENT '学号',
+  name VARCHAR(200) COMMENT '姓名',
+  age    int COMMENT '年龄'
+) COMMENT='mock_test';
+
+
+select * from test_tool.test1;
+
+select * from test_tool.users;
+select * from test_tool.roles;
+select * from test_tool.tool_statistics;
+select * from test_tool.statistics_flow;
+select * from test_tool.tool_manage;
